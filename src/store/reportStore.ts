@@ -23,6 +23,28 @@ export function saveRapor(rapor: Omit<Rapor, 'id' | 'olusturma_tarihi'>): Rapor 
   return yeni;
 }
 
+export function updateRapor(id: string, guncelleme: Partial<Omit<Rapor, 'id' | 'olusturma_tarihi'>>): boolean {
+  const raporlar = getRaporlar();
+  const idx = raporlar.findIndex((r) => r.id === id);
+  if (idx === -1) return false;
+  raporlar[idx] = { ...raporlar[idx], ...guncelleme };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(raporlar));
+  return true;
+}
+
+export function deleteRapor(id: string): boolean {
+  const raporlar = getRaporlar();
+  const idx = raporlar.findIndex((r) => r.id === id);
+  if (idx === -1) return false;
+  raporlar.splice(idx, 1);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(raporlar));
+  return true;
+}
+
+export function getRaporById(id: string): Rapor | undefined {
+  return getRaporlar().find((r) => r.id === id);
+}
+
 export function getBlokRaporlari(ada: string, blokNo: number): Rapor[] {
   return getRaporlar().filter(
     (r) => r.ada === ada && r.blok_no === blokNo

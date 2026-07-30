@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { getRaporlar, getPersonelRaporlari } from '../store/reportStore';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getRaporlar, getPersonelRaporlari, deleteRapor } from '../store/reportStore';
 import { getCurrentUser } from '../store/authStore';
 import { blokData } from '../data/blokData';
 import ReportCard from '../components/ReportCard';
+import StatusBadge from '../components/StatusBadge';
 import { DURUM_LABELLARI } from '../data/isKalemleri';
+import { toastGoster } from '../store/toastStore';
 
 export default function ReportList() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preAda = searchParams.get('ada') || '';
   const preBlok = searchParams.get('blok') || '';
@@ -15,8 +18,10 @@ export default function ReportList() {
   const [filterBlok, setFilterBlok] = useState(preBlok);
   const [filterDurum, setFilterDurum] = useState('');
   const [sadeceBenim, setSadeceBenim] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const user = getCurrentUser();
+  const isAdmin = user?.admin ?? false;
 
   let raporlar = getRaporlar().sort(
     (a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime()
@@ -32,10 +37,28 @@ export default function ReportList() {
     if (filterAda && r.ada !== filterAda) return false;
     if (filterBlok && r.blok_no !== parseInt(filterBlok)) return false;
     if (filterDurum && r.durum !== filterDurum) return false;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (!r.ada.toLowerCase().includes(q) &&
+          !String(r.blok_no).includes(q) &&
+          !r.is_kalemi.toLowerCase().includes(q) &&
+          !r.aciklama.toLowerCase().includes(q) &&
+          !r.raporlayan.toLowerCase().includes(q)) {
+        return false;
+      }
+    }
     return true;
   });
 
   const adaList = blokData.adalar;
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Bu raporu silmek istediğinize emin misiniz?')) {
+      if (deleteRapor(id)) {
+        toastGoster('Rapor silindi', 'success');
+      }
+    }
+  };
 
   return (
     <div>
@@ -44,49 +67,66 @@ export default function ReportList() {
       </h1>
 
       <div
+        style={{
+          backgroundColor: '#fff',
+          borderRadius: 12,
+          padding: 14,
+          marginBottom: 16,
+          border: '1px solid #f0f0f0',
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Ada, blok, iş kalemi, açıklama veya kişi ara..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           style={{
-            backgroundColor: '#fff',
-            borderRadius: 12,
-            padding: 14,
-            marginBottom: 16,
-            border: '1px solid #f0f0f0',
+            width: '100%',
+            padding: '10px 12px',
+            borderRadius: 8,
+            border: '1px solid #e5e7eb',
+            fontSize: 13,
+            marginBottom: 8,
+            boxSizing: 'border-box',
           }}
-        >
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button
-              onClick={() => setSadeceBenim(false)}
-              style={{
-                flex: 1,
-                padding: '8px 10px',
-                borderRadius: 8,
-                border: 'none',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                backgroundColor: !sadeceBenim ? '#f59e0b' : '#f3f4f6',
-                color: !sadeceBenim ? '#fff' : '#4b5563',
-              }}
-            >
-              Tüm Raporlar
-            </button>
-            <button
-              onClick={() => setSadeceBenim(true)}
-              style={{
-                flex: 1,
-                padding: '8px 10px',
-                borderRadius: 8,
-                border: 'none',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                backgroundColor: sadeceBenim ? '#f59e0b' : '#f3f4f6',
-                color: sadeceBenim ? '#fff' : '#4b5563',
-              }}
-            >
-              Raporlarım
-            </button>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        />
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          <button
+            onClick={() => setSadeceBenim(false)}
+            style={{
+              flex: 1,
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: 'none',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              backgroundColor: !sadeceBenim ? '#f59e0b' : '#f3f4f6',
+              color: !sadeceBenim ? '#fff' : '#4b5563',
+            }}
+          >
+            Tüm Raporlar
+          </button>
+          <button
+            onClick={() => setSadeceBenim(true)}
+            style={{
+              flex: 1,
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: 'none',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              backgroundColor: sadeceBenim ? '#f59e0b' : '#f3f4f6',
+              color: sadeceBenim ? '#fff' : '#4b5563',
+            }}
+          >
+            Raporlarım
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <select
             value={filterAda}
             onChange={(e) => { setFilterAda(e.target.value); setFilterBlok(''); }}
@@ -164,7 +204,43 @@ export default function ReportList() {
             <p style={{ fontSize: 12 }}>Filtreleri temizleyip tekrar deneyin</p>
           </div>
         ) : (
-          filtered.map((r) => <ReportCard key={r.id} rapor={r} />)
+          filtered.map((r) => (
+            <div
+              key={r.id}
+              onClick={() => navigate(`/rapor-ekle?edit=${r.id}`)}
+              style={{ cursor: 'pointer', position: 'relative' }}
+            >
+              <ReportCard rapor={r} />
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  display: 'flex',
+                  gap: 4,
+                }}
+              >
+                {isAdmin && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }}
+                    style={{
+                      background: '#fef2f2',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '2px 6px',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      color: '#ef4444',
+                    }}
+                    title="Sil"
+                  >
+                    🗑️
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
         )}
       </div>
 

@@ -6,6 +6,7 @@ import { getKullaniciBlokAtamasi, setKullaniciBlokAtamasi, getKullaniciAdaAtamas
 import { getCurrentUser } from '../store/authStore';
 import type { BlokAtamasi } from '../types';
 import ReportCard from '../components/ReportCard';
+import { toastGoster } from '../store/toastStore';
 
 function exportCSV() {
   const { personel } = personelData;
@@ -25,6 +26,7 @@ function exportCSV() {
   a.download = 'personel_atamalari.csv';
   a.click();
   URL.revokeObjectURL(url);
+  toastGoster('CSV dosyası indiriliyor', 'success');
 }
 
 export default function Personnel() {
@@ -111,6 +113,7 @@ export default function Personnel() {
     if (!editPerson) return;
     setKullaniciAdaAtamasi(editPerson, editAda || null);
     setKullaniciBlokAtamasi(editPerson, editBlokAtama);
+    toastGoster(`${editPerson} atamaları kaydedildi`, 'success');
     setEditPerson(null);
     setEditAda('');
     setEditBlokAtama({});

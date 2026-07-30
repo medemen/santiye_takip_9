@@ -10,6 +10,8 @@ import Personnel from './pages/Personnel';
 import Profile from './pages/Profile';
 import Statistics from './pages/Statistics';
 import Login from './pages/Login';
+import ErrorBoundary from './components/ErrorBoundary';
+import Toast from './components/Toast';
 import { isLoggedIn } from './store/authStore';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -22,29 +24,34 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter basename="/santiye_takip_9">
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/adalar" element={<AdaList />} />
-                  <Route path="/ada/:ada" element={<AdaDetail />} />
-                  <Route path="/ada/:ada/blok/:blokNo" element={<BlokDetail />} />
-                  <Route path="/rapor-ekle" element={<ReportAdd />} />
-                  <Route path="/raporlar" element={<ReportList />} />
-                  <Route path="/personel" element={<Personnel />} />
-                  <Route path="/profil" element={<Profile />} />
-                  <Route path="/istatistik" element={<Statistics />} />
-                </Routes>
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+      <ErrorBoundary>
+        <>
+          <Toast />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/adalar" element={<AdaList />} />
+                      <Route path="/ada/:ada" element={<AdaDetail />} />
+                      <Route path="/ada/:ada/blok/:blokNo" element={<BlokDetail />} />
+                      <Route path="/rapor-ekle" element={<ReportAdd />} />
+                      <Route path="/raporlar" element={<ReportList />} />
+                      <Route path="/personel" element={<Personnel />} />
+                      <Route path="/profil" element={<Profile />} />
+                      <Route path="/istatistik" element={<Statistics />} />
+                    </Routes>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

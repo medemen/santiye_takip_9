@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { blokData } from '../data/blokData';
-import { personelData } from '../data/personelData';
 import { IS_KALEMLERI, DURUM_LABELLARI } from '../data/isKalemleri';
-import { saveRapor } from '../store/reportStore';
+import { saveRapor, updateRapor, getRaporById } from '../store/reportStore';
 import { getCurrentUser } from '../store/authStore';
 import { getKullaniciAdaAtamasi, getKullaniciBloklari } from '../store/atamaStore';
 import type { IsDurumu } from '../types';
 import { todayISO } from '../utils/helpers';
+import { toastGoster } from '../store/toastStore';
 
 type Step = 'ada' | 'blok' | 'is_kalemi' | 'detay';
 
@@ -16,9 +16,11 @@ export default function ReportAdd() {
   const [searchParams] = useSearchParams();
   const preAda = searchParams.get('ada') || '';
   const preBlok = searchParams.get('blok') || '';
+  const editId = searchParams.get('edit') || '';
 
   const user = getCurrentUser();
   const kullaniciAdi = user?.ad_soyad ?? '';
+  const editMode = !!editId;
 
   const atananAda = getKullaniciAdaAtamasi(kullaniciAdi);
   const userBloklar = atananAda ? getKullaniciBloklari(kullaniciAdi, atananAda) : [];
@@ -36,7 +38,9 @@ export default function ReportAdd() {
       ? blokData.adalar.filter((a) => a.ada === atananAda)
       : [];
 
-  const [step, setStep] = useState<Step>(preAda ? 'blok' : 'ada');
+  const [step, setStep] = useState<Step>(
+    editId ? 'detay' : preAda ? 'blok' : 'ada'
+  );
   const [ada, setAda] = useState(preAda);
   const [blokNo, setBlokNo] = useState(preBlok ? parseInt(preBlok) : 0);
   const [isKalemi, setIsKalemi] = useState('');
@@ -44,6 +48,21 @@ export default function ReportAdd() {
   const [ilerleme, setIlerleme] = useState(50);
   const [aciklama, setAciklama] = useState('');
   const [tarih, setTarih] = useState(todayISO());
+
+  useEffect(() => {
+    if (editId) {
+      const rapor = getRaporById(editId);
+      if (rapor) {
+        setAda(rapor.ada);
+        setBlokNo(rapor.blok_no);
+        setIsKalemi(rapor.is_kalemi);
+        setDurum(rapor.durum);
+        setIlerleme(rapor.ilerleme_yuzde);
+        setAciklama(rapor.aciklama);
+        setTarih(rapor.tarih);
+      }
+    }
+  }, [editId]);
 
   const adaData = ada ? blokData.adalar.find((a) => a.ada === ada) : null;
 
@@ -61,16 +80,31 @@ export default function ReportAdd() {
 
   const handleSubmit = () => {
     if (!ada || !blokNo || !isKalemi || !user) return;
-    saveRapor({
-      tarih,
-      raporlayan: kullaniciAdi,
-      ada,
-      blok_no: blokNo,
-      is_kalemi: isKalemi,
-      durum,
-      ilerleme_yuzde: durum === 'tamamlandi' ? 100 : ilerleme,
-      aciklama,
-    });
+    if (editMode && editId) {
+      updateRapor(editId, {
+        tarih,
+        raporlayan: kullaniciAdi,
+        ada,
+        blok_no: blokNo,
+        is_kalemi: isKalemi,
+        durum,
+        ilerleme_yuzde: durum === 'tamamlandi' ? 100 : ilerleme,
+        aciklama,
+      });
+      toastGoster('Rapor güncellendi', 'success');
+    } else {
+      saveRapor({
+        tarih,
+        raporlayan: kullaniciAdi,
+        ada,
+        blok_no: blokNo,
+        is_kalemi: isKalemi,
+        durum,
+        ilerleme_yuzde: durum === 'tamamlandi' ? 100 : ilerleme,
+        aciklama,
+      });
+      toastGoster('Rapor kaydedildi', 'success');
+    }
     navigate('/raporlar');
   };
 
@@ -127,10 +161,10 @@ export default function ReportAdd() {
   return (
     <div>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1f2937', marginBottom: 4 }}>
-        Rapor Ekle
+        {editMode ? 'Rapor Düzenle' : 'Rapor Ekle'}
       </h1>
       <p style={{ fontSize: 13, color: '#6b7280', margin: 0, marginBottom: 16 }}>
-        Blok ilerleme durumunu raporlayın
+        {editMode ? 'Mevcut raporu güncelleyin' : 'Blok ilerleme durumunu raporlayın'}
       </p>
 
       {renderStepIndicator()}
@@ -433,7 +467,7 @@ export default function ReportAdd() {
                   cursor: 'pointer',
                 }}
               >
-                Kaydet
+                {editMode ? 'Güncelle' : 'Kaydet'}
               </button>
             </div>
           </div>

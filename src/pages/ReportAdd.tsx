@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { blokData } from '../data/blokData';
+import { personelData } from '../data/personelData';
 import { IS_KALEMLERI, DURUM_LABELLARI } from '../data/isKalemleri';
 import { saveRapor } from '../store/reportStore';
 import { getCurrentUser } from '../store/authStore';
-import { getKullaniciAtamasi } from '../store/atamaStore';
+import { getKullaniciAdaAtamasi, getKullaniciBloklari } from '../store/atamaStore';
 import type { IsDurumu } from '../types';
 import { todayISO } from '../utils/helpers';
 
@@ -17,11 +18,23 @@ export default function ReportAdd() {
   const preBlok = searchParams.get('blok') || '';
 
   const user = getCurrentUser();
-  const userAtama = user ? getKullaniciAtamasi(user.ad_soyad) : {};
+  const kullaniciAdi = user?.ad_soyad ?? '';
 
-  const atanmisAdalar = blokData.adalar.filter(
-    (a) => (userAtama[a.ada]?.length ?? 0) > 0
-  );
+  const atananAda = getKullaniciAdaAtamasi(kullaniciAdi);
+  const userBloklar = atananAda ? getKullaniciBloklari(kullaniciAdi, atananAda) : [];
+
+  const yetkiliAdalar: string[] = [];
+  if (user?.admin) {
+    yetkiliAdalar.push(...user.yetkili_adalar);
+  } else if (atananAda) {
+    yetkiliAdalar.push(atananAda);
+  }
+
+  const gosterilecekAdalar = user?.admin
+    ? blokData.adalar.filter((a) => yetkiliAdalar.includes(a.ada))
+    : atananAda
+      ? blokData.adalar.filter((a) => a.ada === atananAda)
+      : [];
 
   const [step, setStep] = useState<Step>(preAda ? 'blok' : 'ada');
   const [ada, setAda] = useState(preAda);
@@ -33,13 +46,24 @@ export default function ReportAdd() {
   const [tarih, setTarih] = useState(todayISO());
 
   const adaData = ada ? blokData.adalar.find((a) => a.ada === ada) : null;
-  const atanmisBloklar = ada ? (userAtama[ada] || []) : [];
+
+  const getBlokFiltre = () => {
+    if (!ada) return [];
+    if (user?.admin) {
+      const blokAtama = getKullaniciBloklari(kullaniciAdi, ada);
+      return blokAtama.length > 0 ? blokAtama : adaData?.bloklar.map((b) => b.blok_no) ?? [];
+    }
+    if (atananAda === ada) {
+      return userBloklar.length > 0 ? userBloklar : adaData?.bloklar.map((b) => b.blok_no) ?? [];
+    }
+    return [];
+  };
 
   const handleSubmit = () => {
     if (!ada || !blokNo || !isKalemi || !user) return;
     saveRapor({
       tarih,
-      raporlayan: user.ad_soyad,
+      raporlayan: kullaniciAdi,
       ada,
       blok_no: blokNo,
       is_kalemi: isKalemi,
@@ -75,7 +99,7 @@ export default function ReportAdd() {
     );
   };
 
-  if (atanmisAdalar.length === 0) {
+  if (gosterilecekAdalar.length === 0) {
     return (
       <div>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1f2937', marginBottom: 4 }}>
@@ -92,7 +116,8 @@ export default function ReportAdd() {
         >
           <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
           <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
-            Henüz size blok atanmamış. Lütfen Personel sayfasından atama yapın.
+            Size atanmış bir ada bulunmuyor.
+            {user?.admin ? ' Personel sayfasından atama yapabilirsiniz.' : ''}
           </p>
         </div>
       </div>
@@ -126,7 +151,7 @@ export default function ReportAdd() {
               Ada Seçin
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {atanmisAdalar.map((a) => (
+              {gosterilecekAdalar.map((a) => (
                 <button
                   key={a.ada}
                   onClick={() => {
@@ -145,7 +170,7 @@ export default function ReportAdd() {
                     textAlign: 'left',
                   }}
                 >
-                  {a.ada} — {userAtama[a.ada]?.length || 0} Blok
+                  {a.ada} — {a.blok_sayisi} Blok
                   <div style={{ fontSize: 12, fontWeight: 400, color: '#6b7280', marginTop: 2 }}>
                     {a.toplam_daire} daire, {a.toplam_kat} kat
                   </div>
@@ -170,7 +195,7 @@ export default function ReportAdd() {
               }}
             >
               {adaData?.bloklar
-                .filter((b) => atanmisBloklar.includes(b.blok_no))
+                .filter((b) => getBlokFiltre().includes(b.blok_no))
                 .map((b) => (
                   <button
                     key={b.blok_no}
@@ -362,7 +387,7 @@ export default function ReportAdd() {
               </label>
               <input
                 type="text"
-                value={user?.ad_soyad || ''}
+                value={kullaniciAdi}
                 readOnly
                 style={{
                   width: '100%',

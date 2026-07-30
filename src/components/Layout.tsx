@@ -18,8 +18,10 @@ export default function Layout({ children }: Props) {
   const user = getCurrentUser();
 
   const handleLogout = () => {
-    cikisYap();
-    navigate('/login');
+    if (window.confirm('Çıkış yapmak istediğinize emin misiniz?')) {
+      cikisYap();
+      navigate('/login');
+    }
   };
 
   return (
@@ -32,11 +34,19 @@ export default function Layout({ children }: Props) {
           padding: '12px 16px 0 16px',
         }}
       >
-        <div style={{ fontSize: 13, color: '#6b7280' }}>
+        <div
+          onClick={() => navigate('/profil')}
+          style={{ fontSize: 13, color: '#6b7280', cursor: 'pointer' }}
+        >
           {user && (
             <span>
               👤 {user.ad_soyad}{' '}
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>({user.rol})</span>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                ({user.rol})
+                {user.admin && (
+                  <span style={{ color: '#f59e0b', fontWeight: 600 }}> • Yönetici</span>
+                )}
+              </span>
             </span>
           )}
         </div>

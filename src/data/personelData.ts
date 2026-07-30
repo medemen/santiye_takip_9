@@ -1,34 +1,48 @@
 import personelJson from '../../data/personel.json';
-import type { PersonelData } from '../types';
+import type { PersonelData, Personel } from '../types';
 
 export const personelData = personelJson as PersonelData;
 
-export function getPersonelByAda(ada: string) {
-  const adaKey = ada === 'ADA-1' || ada === 'ADA-2' ? 'ADA-1-2'
-    : ada === 'ADA-3' || ada === 'ADA-4' ? 'ADA-3-4'
-    : 'ADA-5-6';
-  return personelData.adalar.find((a) => a.ada === adaKey);
-}
-
 export function getSantiyeSefi(ada: string): string {
-  const entry = getPersonelByAda(ada);
-  return entry?.santiye_sefi ?? 'Belirtilmemiş';
+  const sef = personelData.santiye_sefleri.find((s) => s.adalar.includes(ada));
+  return sef?.ad_soyad ?? 'Belirtilmemiş';
 }
 
 export function getBlokSorumlulari(ada: string): string[] {
-  const entry = getPersonelByAda(ada);
-  if (!entry) return [];
-  return entry.personel.map((p) => p.ad_soyad);
+  const sef = personelData.santiye_sefleri.find((s) => s.adalar.includes(ada));
+  if (!sef) return [];
+  return personelData.personel
+    .filter((p) => p.atanan_ada && sef.adalar.includes(p.atanan_ada))
+    .map((p) => p.ad_soyad);
+}
+
+export function getAdaPersonelleri(ada: string): Personel[] {
+  return personelData.personel.filter((p) => p.atanan_ada === ada);
+}
+
+export function getAtanmamisPersonel(): Personel[] {
+  return personelData.personel.filter((p) => !p.atanan_ada);
+}
+
+export function getPersonelBySef(sefAdi: string): Personel[] {
+  const sef = personelData.santiye_sefleri.find((s) => s.ad_soyad === sefAdi);
+  if (!sef) return [];
+  return personelData.personel.filter((p) => p.atanan_ada && sef.adalar.includes(p.atanan_ada));
 }
 
 export function getAllPersonel() {
-  const result: { ada: string; santiye_sefi: string; personel: { ad_soyad: string; rol: string }[] }[] = [];
-  for (const entry of personelData.adalar) {
-    result.push({
-      ada: entry.ada,
-      santiye_sefi: entry.santiye_sefi,
-      personel: entry.personel,
-    });
-  }
-  return result;
+  return personelData.personel.map((p) => ({
+    ad_soyad: p.ad_soyad,
+    rol: p.rol,
+    atanan_ada: p.atanan_ada,
+  }));
+}
+
+export function isSantiyeSefi(ad_soyad: string): boolean {
+  return personelData.santiye_sefleri.some((s) => s.ad_soyad === ad_soyad);
+}
+
+export function getSefAdalar(ad_soyad: string): string[] {
+  const sef = personelData.santiye_sefleri.find((s) => s.ad_soyad === ad_soyad);
+  return sef?.adalar ?? [];
 }

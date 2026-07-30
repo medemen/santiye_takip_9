@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getRaporlar } from '../store/reportStore';
+import { getRaporlar, getPersonelRaporlari } from '../store/reportStore';
+import { getCurrentUser } from '../store/authStore';
 import { blokData } from '../data/blokData';
 import ReportCard from '../components/ReportCard';
 import { DURUM_LABELLARI } from '../data/isKalemleri';
@@ -13,10 +14,19 @@ export default function ReportList() {
   const [filterAda, setFilterAda] = useState(preAda);
   const [filterBlok, setFilterBlok] = useState(preBlok);
   const [filterDurum, setFilterDurum] = useState('');
+  const [sadeceBenim, setSadeceBenim] = useState(false);
 
-  const raporlar = getRaporlar().sort(
+  const user = getCurrentUser();
+
+  let raporlar = getRaporlar().sort(
     (a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime()
   );
+
+  if (sadeceBenim && user) {
+    raporlar = getPersonelRaporlari(user.ad_soyad).sort(
+      (a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime()
+    );
+  }
 
   const filtered = raporlar.filter((r) => {
     if (filterAda && r.ada !== filterAda) return false;
@@ -34,15 +44,49 @@ export default function ReportList() {
       </h1>
 
       <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 12,
-          padding: 14,
-          marginBottom: 16,
-          border: '1px solid #f0f0f0',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          style={{
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            padding: 14,
+            marginBottom: 16,
+            border: '1px solid #f0f0f0',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <button
+              onClick={() => setSadeceBenim(false)}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: 8,
+                border: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                backgroundColor: !sadeceBenim ? '#f59e0b' : '#f3f4f6',
+                color: !sadeceBenim ? '#fff' : '#4b5563',
+              }}
+            >
+              Tüm Raporlar
+            </button>
+            <button
+              onClick={() => setSadeceBenim(true)}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: 8,
+                border: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                backgroundColor: sadeceBenim ? '#f59e0b' : '#f3f4f6',
+                color: sadeceBenim ? '#fff' : '#4b5563',
+              }}
+            >
+              Raporlarım
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <select
             value={filterAda}
             onChange={(e) => { setFilterAda(e.target.value); setFilterBlok(''); }}

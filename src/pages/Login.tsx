@@ -1,22 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllPersonel } from '../data/personelData';
+import { personelData, isSantiyeSefi } from '../data/personelData';
 import { girisYap } from '../store/authStore';
 
 export default function Login() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState('');
 
-  const tumPersonel = getAllPersonel().flatMap((g) =>
-    [
-      { ad_soyad: g.santiye_sefi, rol: 'Şantiye Şefi' },
-      ...g.personel.map((p) => ({ ad_soyad: p.ad_soyad, rol: p.rol })),
-    ]
-  );
+  const tumKullanicilar = [
+    ...personelData.santiye_sefleri.map((s) => ({
+      ad_soyad: s.ad_soyad,
+      rol: 'Şantiye Şefi',
+    })),
+    ...personelData.personel.map((p) => ({
+      ad_soyad: p.ad_soyad,
+      rol: p.rol,
+    })),
+  ];
 
   const handleGiris = () => {
     if (!selected) return;
-    const kisi = tumPersonel.find((p) => p.ad_soyad === selected);
+    const kisi = tumKullanicilar.find((p) => p.ad_soyad === selected);
     if (kisi) {
       girisYap(kisi.ad_soyad, kisi.rol);
       navigate('/');
@@ -77,9 +81,9 @@ export default function Login() {
           }}
         >
           <option value="">Kişi seçin</option>
-          {tumPersonel.map((p) => (
-            <option key={p.ad_soyad} value={p.ad_soyad}>
-              {p.ad_soyad} ({p.rol})
+          {tumKullanicilar.map((k) => (
+            <option key={k.ad_soyad} value={k.ad_soyad}>
+              {k.ad_soyad} ({k.rol})
             </option>
           ))}
         </select>

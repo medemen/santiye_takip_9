@@ -7,6 +7,8 @@ import BlokDetail from './pages/BlokDetail';
 import ReportAdd from './pages/ReportAdd';
 import ReportList from './pages/ReportList';
 import Personnel from './pages/Personnel';
+import Profile from './pages/Profile';
+import Statistics from './pages/Statistics';
 import Login from './pages/Login';
 import { isLoggedIn } from './store/authStore';
 
@@ -19,7 +21,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/santiye_takip_9">
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
@@ -35,6 +37,8 @@ export default function App() {
                   <Route path="/rapor-ekle" element={<ReportAdd />} />
                   <Route path="/raporlar" element={<ReportList />} />
                   <Route path="/personel" element={<Personnel />} />
+                  <Route path="/profil" element={<Profile />} />
+                  <Route path="/istatistik" element={<Statistics />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

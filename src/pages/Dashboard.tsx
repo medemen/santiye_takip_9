@@ -73,9 +73,24 @@ export default function Dashboard() {
           border: '1px solid #f0f0f0',
         }}
       >
-        <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0, marginBottom: 8 }}>
-          Rapor Dağılımı
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0 }}>
+            Rapor Dağılımı
+          </h3>
+          <button
+            onClick={() => navigate('/istatistik')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#f59e0b',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Detaylı İstatistik →
+          </button>
+        </div>
         <DonutChart data={donutData} />
       </div>
 

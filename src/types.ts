@@ -1,19 +1,20 @@
 export interface Personel {
   ad_soyad: string;
   rol: string;
+  atanan_ada: string | null;
 }
 
-export interface AdaPersonel {
-  ada: string;
-  santiye_sefi: string;
-  personel: Personel[];
+export interface SantiyeSefi {
+  ad_soyad: string;
+  adalar: string[];
 }
 
 export interface PersonelData {
   aciklama: string;
   proje: string;
   tarih: string;
-  adalar: AdaPersonel[];
+  santiye_sefleri: SantiyeSefi[];
+  personel: Personel[];
 }
 
 export interface Blok {
@@ -43,6 +44,8 @@ export interface BlokData {
 export interface Oturum {
   ad_soyad: string;
   rol: string;
+  admin: boolean;
+  yetkili_adalar: string[];
   giris_tarihi: string;
 }
 

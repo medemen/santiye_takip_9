@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { blokData } from '../data/blokData';
 import { IS_KALEMLERI, DURUM_LABELLARI } from '../data/isKalemleri';
+import { SABLONLAR } from '../data/sablonlar';
 import { saveRapor, updateRapor, getRaporById } from '../store/reportStore';
 import { getCurrentUser } from '../store/authStore';
 import { getKullaniciAdaAtamasi, getKullaniciBloklari } from '../store/atamaStore';
@@ -273,9 +274,48 @@ export default function ReportAdd() {
         {/* ADIM 3: İş Kalemi Seçimi */}
         {step === 'is_kalemi' && (
           <div>
-            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
               {ada} - Blok {blokNo} — İş Kalemi
             </h3>
+
+            {!editMode && SABLONLAR.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6b7280', marginBottom: 4 }}>
+                  Hızlı Şablon
+                </label>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {SABLONLAR.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        if (s.is_kalemleri.length === 1) {
+                          setIsKalemi(s.is_kalemleri[0]);
+                          setStep('detay');
+                        } else {
+                          const secim = window.prompt(`"${s.ad}" şablonu seçildi. İş kalemi seçin:\n${s.is_kalemleri.map((ik, i) => `${i + 1}. ${ik}`).join('\n')}`);
+                          if (secim) {
+                            const idx = parseInt(secim) - 1;
+                            if (idx >= 0 && idx < s.is_kalemleri.length) {
+                              setIsKalemi(s.is_kalemleri[idx]);
+                              setDurum(s.varsayilan_durum as IsDurumu);
+                              setStep('detay');
+                            }
+                          }
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px', backgroundColor: '#fef3c7', border: '1px solid #f59e0b',
+                        borderRadius: 8, fontSize: 11, fontWeight: 500, color: '#92400e',
+                        cursor: 'pointer',
+                      }}
+                      title={s.aciklama}
+                    >
+                      📋 {s.ad}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div
               style={{
                 display: 'grid',

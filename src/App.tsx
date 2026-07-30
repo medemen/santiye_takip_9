@@ -13,7 +13,8 @@ import Statistics from './pages/Statistics';
 import Login from './pages/Login';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
-import { isLoggedIn } from './store/authStore';
+import { isLoggedIn, supabaseAuthInit } from './store/authStore';
+import { useEffect } from 'react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!isLoggedIn()) {
@@ -23,6 +24,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => { supabaseAuthInit(); }, []);
+
   return (
     <BrowserRouter basename="/santiye_takip_9">
       <ErrorBoundary>

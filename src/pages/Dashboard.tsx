@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { getIstatistikler, getSonRaporlar, getAdaGenelIlerleme } from '../store/reportStore';
+import { getIstatistikler, getSonRaporlar, getAdaGenelIlerleme, getRaporlar } from '../store/reportStore';
 import { blokData } from '../data/blokData';
 import { IS_KALEMLERI, DURUM_RENKLERI } from '../data/isKalemleri';
 import DonutChart from '../components/DonutChart';
@@ -11,6 +11,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const stats = getIstatistikler();
   const sonRaporlar = getSonRaporlar(5);
+  const tumRaporlar = getRaporlar();
+  const gecikenIsler = tumRaporlar.filter((r) => r.durum === 'gecikme');
 
   const donutData = [
     { name: 'Tamamlandı', value: stats.tamamlananIsler, color: DURUM_RENKLERI.tamamlandi },
@@ -110,20 +112,55 @@ export default function Dashboard() {
         <BarChart data={adaProgress} />
       </div>
 
+      {gecikenIsler.length > 0 && (
+        <div
+          style={{
+            backgroundColor: '#fef2f2',
+            borderRadius: 16,
+            padding: 14,
+            marginBottom: 16,
+            border: '1px solid #fecaca',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#ef4444' }}>
+              {gecikenIsler.length} Geciken İş Kalemi
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {gecikenIsler.slice(0, 5).map((r) => (
+              <div
+                key={r.id}
+                onClick={() => navigate(`/ada/${r.ada}/blok/${r.blok_no}`)}
+                style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  padding: '6px 10px', backgroundColor: '#fff',
+                  borderRadius: 8, cursor: 'pointer', fontSize: 12,
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>{r.ada} - Blok {r.blok_no}</span>
+                <span style={{ color: '#ef4444' }}>{r.is_kalemi}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 16,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          border: '1px solid #f0f0f0',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0 }}>
-            Son Raporlar
-          </h3>
+          style={{
+            backgroundColor: '#fff',
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 16,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            border: '1px solid #f0f0f0',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0 }}>
+              Son Raporlar
+            </h3>
           <button
             onClick={() => navigate('/raporlar')}
             style={{

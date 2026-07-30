@@ -6,6 +6,7 @@ import AdaDetail from './pages/AdaDetail';
 import BlokDetail from './pages/BlokDetail';
 import ReportAdd from './pages/ReportAdd';
 import ReportList from './pages/ReportList';
+import BulkReport from './pages/BulkReport';
 import Personnel from './pages/Personnel';
 import Profile from './pages/Profile';
 import Statistics from './pages/Statistics';
@@ -42,6 +43,7 @@ export default function App() {
                       <Route path="/rapor-ekle" element={<ReportAdd />} />
                       <Route path="/raporlar" element={<ReportList />} />
                       <Route path="/personel" element={<Personnel />} />
+                  <Route path="/toplu-rapor" element={<BulkReport />} />
                       <Route path="/profil" element={<Profile />} />
                       <Route path="/istatistik" element={<Statistics />} />
                     </Routes>

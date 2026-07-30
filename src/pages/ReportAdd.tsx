@@ -48,6 +48,7 @@ export default function ReportAdd() {
   const [ilerleme, setIlerleme] = useState(50);
   const [aciklama, setAciklama] = useState('');
   const [tarih, setTarih] = useState(todayISO());
+  const [fotograflar, setFotograflar] = useState<string[]>([]);
 
   useEffect(() => {
     if (editId) {
@@ -60,6 +61,7 @@ export default function ReportAdd() {
         setIlerleme(rapor.ilerleme_yuzde);
         setAciklama(rapor.aciklama);
         setTarih(rapor.tarih);
+        setFotograflar(rapor.fotograflar || []);
       }
     }
   }, [editId]);
@@ -102,6 +104,7 @@ export default function ReportAdd() {
         durum,
         ilerleme_yuzde: durum === 'tamamlandi' ? 100 : ilerleme,
         aciklama,
+        fotograflar: fotograflar.length > 0 ? fotograflar : undefined,
       });
       toastGoster('Rapor kaydedildi', 'success');
     }
@@ -415,7 +418,51 @@ export default function ReportAdd() {
               />
             </div>
 
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#4b5563', marginBottom: 6 }}>
+                Fotoğraflar
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const result = reader.result as string;
+                    setFotograflar((prev) => [...prev, result]);
+                  };
+                  reader.readAsDataURL(file);
+                  e.target.value = '';
+                }}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 13, backgroundColor: '#f9fafb', boxSizing: 'border-box' }}
+              />
+              {fotograflar.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                  {fotograflar.map((f, i) => (
+                    <div key={i} style={{ position: 'relative' }}>
+                      <img src={f} alt={`Foto ${i + 1}`} style={{ width: 72, height: 72, borderRadius: 8, objectFit: 'cover' }} />
+                      <button
+                        onClick={() => setFotograflar((prev) => prev.filter((_, j) => j !== i))}
+                        style={{
+                          position: 'absolute', top: -4, right: -4, width: 20, height: 20,
+                          borderRadius: '50%', backgroundColor: '#ef4444', color: '#fff',
+                          border: 'none', fontSize: 11, cursor: 'pointer', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', padding: 0,
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>Sahada çektiğiniz fotoğrafları ekleyin</p>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#4b5563', marginBottom: 6 }}>
                 Raporlayan
               </label>

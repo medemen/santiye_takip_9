@@ -7,6 +7,7 @@ const navItems = [
   { to: '/rapor-ekle', label: 'Rapor', icon: '➕', fab: true },
   { to: '/raporlar', label: 'Raporlar', icon: '📋' },
   { to: '/personel', label: 'Personel', icon: '👥' },
+  { to: '/toplu-rapor', label: 'Toplu', icon: '📦' },
 ];
 
 interface Props {

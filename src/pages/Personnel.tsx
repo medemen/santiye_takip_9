@@ -34,6 +34,9 @@ export default function Personnel() {
   const [editPerson, setEditPerson] = useState<string | null>(null);
   const [editAda, setEditAda] = useState<string>('');
   const [editBlokAtama, setEditBlokAtama] = useState<BlokAtamasi>({});
+  const [bulkMode, setBulkMode] = useState(false);
+  const [seciliKisiler, setSeciliKisiler] = useState<Set<string>>(new Set());
+  const [bulkAda, setBulkAda] = useState('');
 
   const user = getCurrentUser();
   const isAdmin = user?.admin ?? false;
@@ -354,6 +357,24 @@ export default function Personnel() {
           >
             📥 CSV
           </button>
+          {isAdmin && !bulkMode && (
+            <button
+              onClick={() => setBulkMode(true)}
+              style={{
+                background: 'none',
+                border: '1px solid #f59e0b',
+                borderRadius: 8,
+                padding: '4px 10px',
+                fontSize: 11,
+                color: '#f59e0b',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+              title="Toplu Atama"
+            >
+              📋 Toplu
+            </button>
+          )}
           {isAdmin && (
             <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 600 }}>
               Yönetici modu
@@ -361,6 +382,67 @@ export default function Personnel() {
           )}
         </div>
       </div>
+
+      {bulkMode && (
+        <div
+          style={{
+            backgroundColor: '#fef3c7',
+            borderRadius: 12,
+            padding: 14,
+            marginBottom: 16,
+            border: '1px solid #f59e0b',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>
+              Toplu Atama ({seciliKisiler.size} kişi seçili)
+            </span>
+            <button
+              onClick={() => { setBulkMode(false); setSeciliKisiler(new Set()); setBulkAda(''); }}
+              style={{
+                background: 'none', border: 'none', fontSize: 12, color: '#92400e',
+                fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              İptal
+            </button>
+          </div>
+          <select
+            value={bulkAda}
+            onChange={(e) => setBulkAda(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: 8,
+              border: '1px solid #f59e0b', fontSize: 13, backgroundColor: '#fff',
+              marginBottom: 10, boxSizing: 'border-box',
+            }}
+          >
+            <option value="">Ada seçin</option>
+            {yetkiliAdalar.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => {
+              if (!bulkAda || seciliKisiler.size === 0) return;
+              seciliKisiler.forEach((k) => setKullaniciAdaAtamasi(k, bulkAda));
+              toastGoster(`${seciliKisiler.size} kişi ${bulkAda} adasına atandı`, 'success');
+              setSeciliKisiler(new Set());
+              setBulkAda('');
+              setBulkMode(false);
+            }}
+            disabled={!bulkAda || seciliKisiler.size === 0}
+            style={{
+              width: '100%', padding: 10,
+              backgroundColor: bulkAda && seciliKisiler.size > 0 ? '#f59e0b' : '#e5e7eb',
+              border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              color: bulkAda && seciliKisiler.size > 0 ? '#fff' : '#9ca3af',
+              cursor: bulkAda && seciliKisiler.size > 0 ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {seciliKisiler.size > 0 ? `${seciliKisiler.size} Kişiyi ${bulkAda} Adasına Ata` : 'Kişi Seçin'}
+          </button>
+        </div>
+      )}
 
       {atanmamis.length > 0 && (
         <div style={{ marginBottom: 20 }}>
@@ -386,6 +468,14 @@ export default function Personnel() {
                 onEdit={() => openEdit(p.ad_soyad)}
                 rolRenkleri={rolRenkleri}
                 rolYaziRenkleri={rolYaziRenkleri}
+                bulkMode={bulkMode}
+                secili={seciliKisiler.has(p.ad_soyad)}
+                onToggleSelect={() => {
+                  const yeni = new Set(seciliKisiler);
+                  if (yeni.has(p.ad_soyad)) yeni.delete(p.ad_soyad);
+                  else yeni.add(p.ad_soyad);
+                  setSeciliKisiler(yeni);
+                }}
               />
             ))}
           </div>
@@ -429,6 +519,14 @@ export default function Personnel() {
                     onEdit={() => openEdit(p.ad_soyad)}
                     rolRenkleri={rolRenkleri}
                     rolYaziRenkleri={rolYaziRenkleri}
+                    bulkMode={bulkMode}
+                    secili={seciliKisiler.has(p.ad_soyad)}
+                    onToggleSelect={() => {
+                      const yeni = new Set(seciliKisiler);
+                      if (yeni.has(p.ad_soyad)) yeni.delete(p.ad_soyad);
+                      else yeni.add(p.ad_soyad);
+                      setSeciliKisiler(yeni);
+                    }}
                   />
                 ))}
               </div>
@@ -447,6 +545,9 @@ function PersonelKart({
   onEdit,
   rolRenkleri,
   rolYaziRenkleri,
+  bulkMode,
+  secili,
+  onToggleSelect,
 }: {
   person: { ad_soyad: string; rol: string };
   isAdmin: boolean;
@@ -454,6 +555,9 @@ function PersonelKart({
   onEdit: () => void;
   rolRenkleri: Record<string, string>;
   rolYaziRenkleri: Record<string, string>;
+  bulkMode?: boolean;
+  secili?: boolean;
+  onToggleSelect?: () => void;
 }) {
   return (
     <div
@@ -461,13 +565,23 @@ function PersonelKart({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: secili ? '#fef3c7' : '#fff',
         borderRadius: 10,
         padding: '10px 14px',
-        border: '1px solid #f0f0f0',
+        border: '1px solid',
+        borderColor: secili ? '#f59e0b' : '#f0f0f0',
+        transition: 'all 0.15s',
       }}
     >
-      <div onClick={onClick} style={{ flex: 1, cursor: 'pointer' }}>
+      {bulkMode && (
+        <input
+          type="checkbox"
+          checked={!!secili}
+          onChange={onToggleSelect}
+          style={{ marginRight: 10, accentColor: '#f59e0b', width: 18, height: 18, cursor: 'pointer' }}
+        />
+      )}
+      <div onClick={bulkMode ? undefined : onClick} style={{ flex: 1, cursor: bulkMode ? 'default' : 'pointer' }}>
         <div style={{ fontSize: 13, fontWeight: 500, color: '#1f2937' }}>{person.ad_soyad}</div>
         <span
           style={{
@@ -483,7 +597,7 @@ function PersonelKart({
           {person.rol}
         </span>
       </div>
-      {isAdmin && (
+      {isAdmin && !bulkMode && (
         <button
           onClick={onEdit}
           style={{

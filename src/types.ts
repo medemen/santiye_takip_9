@@ -74,6 +74,7 @@ export interface Rapor {
   ilerleme_yuzde: number;
   aciklama: string;
   olusturma_tarihi: string;
+  fotograflar?: string[];
 }
 
 export interface BlokProgress {

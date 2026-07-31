@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, cikisYap } from '../store/authStore';
 import { getKullaniciAdaAtamasi, getKullaniciBloklari } from '../store/atamaStore';
 import { getPersonelRaporlari } from '../store/reportStore';
-import { blokData } from '../data/blokData';
 import { personelData } from '../data/personelData';
 
 export default function Profile() {

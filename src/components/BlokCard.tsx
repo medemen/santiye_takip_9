@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import type { Blok, IsDurumu } from '../types';
 import ProgressBar from './ProgressBar';
 import StatusBadge from './StatusBadge';
@@ -10,25 +11,27 @@ interface Props {
   onClick?: () => void;
 }
 
-export default function BlokCard({ ada, blok, onClick }: Props) {
-  const raporlar = getBlokRaporlari(ada, blok.blok_no);
-  const isKalemleri = IS_KALEMLERI as readonly string[];
-  const tamamlanan = isKalemleri.filter((ik) => {
-    const son = raporlar.filter((r) => r.is_kalemi === ik)
-      .sort((a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime());
-    return son.length > 0 && son[0].durum === 'tamamlandi';
-  }).length;
+const BlokCard = memo(function BlokCard({ ada, blok, onClick }: Props) {
+  const raporlar = useMemo(() => getBlokRaporlari(ada, blok.blok_no), [ada, blok.blok_no]);
+  const isKalemleri = IS_KALEMLERI;
 
-  const geciken = isKalemleri.filter((ik) => {
-    const son = raporlar.filter((r) => r.is_kalemi === ik)
-      .sort((a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime());
-    return son.length > 0 && son[0].durum === 'gecikme';
-  }).length;
+  const { tamamlanan, geciken, sonDurum } = useMemo(() => {
+    let t = 0, g = 0;
+    let son: IsDurumu | null = null;
+    for (const ik of isKalemleri) {
+      const sonRapor = raporlar
+        .filter((r) => r.is_kalemi === ik)
+        .sort((a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime());
+      if (sonRapor.length > 0) {
+        if (sonRapor[0].durum === 'tamamlandi') t++;
+        if (sonRapor[0].durum === 'gecikme') g++;
+        if (!son) son = sonRapor[0].durum;
+      }
+    }
+    return { tamamlanan: t, geciken: g, sonDurum: son };
+  }, [raporlar, isKalemleri]);
 
   const progress = isKalemleri.length > 0 ? Math.round((tamamlanan / isKalemleri.length) * 100) : 0;
-  const sonDurum: IsDurumu | null = raporlar.length > 0
-    ? raporlar.sort((a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime())[0].durum
-    : null;
 
   return (
     <div
@@ -71,4 +74,6 @@ export default function BlokCard({ ada, blok, onClick }: Props) {
       )}
     </div>
   );
-}
+});
+
+export default BlokCard;

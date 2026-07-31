@@ -2,9 +2,10 @@ import { useNavigate } from 'react-router-dom';
 import { getIstatistikler, getAdaRaporlari, getAdaGenelIlerleme, getPersonelRaporlari } from '../store/reportStore';
 import { blokData } from '../data/blokData';
 import { personelData } from '../data/personelData';
-import { IS_KALEMLERI, DURUM_RENKLERI, DURUM_LABELLARI } from '../data/isKalemleri';
+import { IS_KALEMLERI, DURUM_RENKLERI } from '../data/isKalemleri';
 import DonutChart from '../components/DonutChart';
 import BarChart from '../components/BarChart';
+import { card, btnGhost, pageTitle } from '../utils/styles';
 
 export default function Statistics() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function Statistics() {
 
   const adaProgress = blokData.adalar.map((a) => ({
     name: a.ada,
-    value: getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI as readonly string[]),
+    value: getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI),
     color: '#f59e0b',
   }));
 
@@ -32,7 +33,7 @@ export default function Statistics() {
       devam: raporlar.filter((r) => r.durum === 'devam_ediyor').length,
       gecikme: raporlar.filter((r) => r.durum === 'gecikme').length,
       plan: raporlar.filter((r) => r.durum === 'planlandi').length,
-      ilerleme: getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI as readonly string[]),
+      ilerleme: getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI),
     };
   });
 
@@ -48,7 +49,7 @@ export default function Statistics() {
     blokData.adalar.length > 0
       ? Math.round(
           blokData.adalar.reduce(
-            (s, a) => s + getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI as readonly string[]),
+            (s, a) => s + getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI),
             0
           ) / blokData.adalar.length
         )
@@ -57,31 +58,13 @@ export default function Statistics() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1f2937', margin: 0 }}>İstatistikler</h1>
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#f59e0b',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
+        <h1 style={pageTitle}>İstatistikler</h1>
+        <button onClick={() => navigate('/')} style={btnGhost}>
           ← Dashboard
         </button>
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 18,
-          marginBottom: 16,
-          border: '1px solid #f0f0f0',
-        }}
-      >
+      <div style={{ ...card, padding: 18, marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#4b5563' }}>Genel İlerleme</span>
           <span style={{ fontSize: 28, fontWeight: 700, color: genelIlerleme === 100 ? '#22c55e' : '#f59e0b' }}>
@@ -108,15 +91,7 @@ export default function Statistics() {
         </div>
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 16,
-          border: '1px solid #f0f0f0',
-        }}
-      >
+      <div style={{ ...card, marginBottom: 16 }}>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0, marginBottom: 8 }}>
           Rapor Dağılımı
         </h3>
@@ -148,30 +123,14 @@ export default function Statistics() {
         </div>
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 16,
-          border: '1px solid #f0f0f0',
-        }}
-      >
+      <div style={{ ...card, marginBottom: 16 }}>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0, marginBottom: 8 }}>
           Ada Bazında İlerleme
         </h3>
         <BarChart data={adaProgress} />
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 16,
-          border: '1px solid #f0f0f0',
-        }}
-      >
+      <div style={{ ...card, marginBottom: 16 }}>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0, marginBottom: 12 }}>
           Ada Detay
         </h3>
@@ -207,15 +166,7 @@ export default function Statistics() {
       </div>
 
       {personelRaporSiralamasi.length > 0 && (
-        <div
-          style={{
-            backgroundColor: '#fff',
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            border: '1px solid #f0f0f0',
-          }}
-        >
+        <div style={{ ...card, marginBottom: 16 }}>
           <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0, marginBottom: 12 }}>
             En Çok Raporlayan Personel
           </h3>

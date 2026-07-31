@@ -1,6 +1,77 @@
 import type { Rapor } from '../types';
+import { getSupabase, isSupabaseReady } from '../lib/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { toastGoster } from './toastStore';
 
 const STORAGE_KEY = 'santiye_raporlari';
+
+type Listener = () => void;
+const _raporListeners = new Set<Listener>();
+
+export function subscribeRaporChanges(listener: Listener): () => void {
+  _raporListeners.add(listener);
+  return () => { _raporListeners.delete(listener); };
+}
+
+function notifyRaporListeners(): void {
+  _raporListeners.forEach(fn => fn());
+}
+
+function raporToSupabase(r: Rapor) {
+  return {
+    id: r.id,
+    tarih: r.tarih,
+    raporlayan: r.raporlayan,
+    ada: r.ada,
+    blok_no: r.blok_no,
+    is_kalemi: r.is_kalemi,
+    durum: r.durum,
+    ilerleme_yuzde: r.ilerleme_yuzde,
+    aciklama: r.aciklama || '',
+    fotograflar: r.fotograflar || [],
+    olusturma_tarihi: r.olusturma_tarihi,
+  };
+}
+
+let _raporChannel: RealtimeChannel | null = null;
+
+export function aboneOlRaporGuncellemeleri(): void {
+  if (!isSupabaseReady() || _raporChannel) return;
+  _raporChannel = getSupabase()
+    .channel('raporlar-realtime')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'raporlar' },
+      (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const raporlar = getRaporlar();
+          if (!raporlar.find(r => r.id === payload.new.id)) {
+            raporlar.push(payload.new as Rapor);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(raporlar));
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          const raporlar = getRaporlar();
+          const idx = raporlar.findIndex(r => r.id === payload.new.id);
+          if (idx !== -1) {
+            raporlar[idx] = payload.new as Rapor;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(raporlar));
+          }
+        } else if (payload.eventType === 'DELETE') {
+          const raporlar = getRaporlar();
+          const filtered = raporlar.filter(r => r.id !== payload.old.id);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+        }
+        notifyRaporListeners();
+      }
+    )
+    .subscribe();
+}
+
+export function realtimeRaporAboneliktenCik(): void {
+  if (_raporChannel) {
+    getSupabase().removeChannel(_raporChannel);
+    _raporChannel = null;
+  }
+}
 
 export function getRaporlar(): Rapor[] {
   try {
@@ -8,6 +79,35 @@ export function getRaporlar(): Rapor[] {
     return data ? JSON.parse(data) : [];
   } catch {
     return [];
+  }
+}
+
+export async function supabaseRaporlariYukle(): Promise<void> {
+  if (!isSupabaseReady()) return;
+  try {
+    const { data, error } = await getSupabase()
+      .from('raporlar')
+      .select('*')
+      .order('olusturma_tarihi', { ascending: false });
+    if (error) throw error;
+    const sunucu = data ?? [];
+    const sunucuIdleri = new Set(sunucu.map((r) => r.id));
+    const yerel = getRaporlar();
+    const bekleyen = yerel.filter((r) => !sunucuIdleri.has(r.id));
+    const birlestirilmis = [...sunucu, ...bekleyen];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(birlestirilmis));
+    notifyRaporListeners();
+    if (bekleyen.length > 0) {
+      const { error: upsertError } = await getSupabase()
+        .from('raporlar')
+        .upsert(bekleyen.map(raporToSupabase), { onConflict: 'id' });
+      if (upsertError) {
+        console.warn('Supabase yerel rapor yükleme hatası:', upsertError.message);
+        toastGoster('Yerel raporlar sunucuya yüklenemedi: ' + upsertError.message, 'error');
+      }
+    }
+  } catch {
+    /* supabase offline, keep local data */
   }
 }
 
@@ -20,6 +120,15 @@ export function saveRapor(rapor: Omit<Rapor, 'id' | 'olusturma_tarihi'>): Rapor 
   const raporlar = getRaporlar();
   raporlar.push(yeni);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(raporlar));
+  notifyRaporListeners();
+  if (isSupabaseReady()) {
+    getSupabase().from('raporlar').insert(raporToSupabase(yeni)).then(({ error }) => {
+      if (error) {
+        console.warn('Supabase rapor kaydetme hatası:', error.message);
+        toastGoster('Rapor sunucuya kaydedilemedi: ' + error.message, 'error');
+      }
+    });
+  }
   return yeni;
 }
 
@@ -29,6 +138,15 @@ export function updateRapor(id: string, guncelleme: Partial<Omit<Rapor, 'id' | '
   if (idx === -1) return false;
   raporlar[idx] = { ...raporlar[idx], ...guncelleme };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(raporlar));
+  notifyRaporListeners();
+  if (isSupabaseReady()) {
+    getSupabase().from('raporlar').update(raporToSupabase(raporlar[idx])).eq('id', id).then(({ error }) => {
+      if (error) {
+        console.warn('Supabase rapor güncelleme hatası:', error.message);
+        toastGoster('Rapor sunucuya güncellenemedi: ' + error.message, 'error');
+      }
+    });
+  }
   return true;
 }
 
@@ -38,6 +156,15 @@ export function deleteRapor(id: string): boolean {
   if (idx === -1) return false;
   raporlar.splice(idx, 1);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(raporlar));
+  notifyRaporListeners();
+  if (isSupabaseReady()) {
+    getSupabase().from('raporlar').delete().eq('id', id).then(({ error }) => {
+      if (error) {
+        console.warn('Supabase rapor silme hatası:', error.message);
+        toastGoster('Rapor sunucudan silinemedi: ' + error.message, 'error');
+      }
+    });
+  }
   return true;
 }
 

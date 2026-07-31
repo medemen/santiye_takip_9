@@ -2,6 +2,7 @@ export interface Personel {
   ad_soyad: string;
   rol: string;
   atanan_ada: string | null;
+  proje_muduru?: boolean;
 }
 
 export interface SantiyeSefi {
@@ -45,6 +46,7 @@ export interface Oturum {
   ad_soyad: string;
   rol: string;
   admin: boolean;
+  proje_muduru: boolean;
   yetkili_adalar: string[];
   giris_tarihi: string;
 }

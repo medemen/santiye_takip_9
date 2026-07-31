@@ -176,6 +176,12 @@
       "ad_soyad": "Erkan Zevkirlioğlu",
       "rol": "Formen",
       "atanan_ada": null
+    },
+    {
+      "ad_soyad": "Proje Müdürü",
+      "rol": "Proje Müdürü",
+      "atanan_ada": null,
+      "proje_muduru": true
     }
   ]
 }

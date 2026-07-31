@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getRaporlar, getPersonelRaporlari, deleteRapor } from '../store/reportStore';
-import { getCurrentUser } from '../store/authStore';
+import { getCurrentUser, isSahaPersoneli } from '../store/authStore';
 import { blokData } from '../data/blokData';
 import ReportCard from '../components/ReportCard';
-import StatusBadge from '../components/StatusBadge';
 import { DURUM_LABELLARI } from '../data/isKalemleri';
 import { toastGoster } from '../store/toastStore';
 import { raporlarXlsxExport } from '../utils/exportXlsx';
@@ -23,6 +22,12 @@ export default function ReportList() {
 
   const user = getCurrentUser();
   const isAdmin = user?.admin ?? false;
+
+  const canEditReport = (raporlayan: string) => {
+    if (!user) return false;
+    if (isAdmin) return true;
+    return isSahaPersoneli(user.rol) && user.ad_soyad === raporlayan;
+  };
 
   let raporlar = getRaporlar().sort(
     (a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime()
@@ -215,13 +220,16 @@ export default function ReportList() {
             <p style={{ fontSize: 12 }}>Filtreleri temizleyip tekrar deneyin</p>
           </div>
         ) : (
-          filtered.map((r) => (
+          filtered.map((r) => {
+            const editable = canEditReport(r.raporlayan);
+            return (
             <div
               key={r.id}
-              onClick={() => navigate(`/rapor-ekle?edit=${r.id}`)}
-              style={{ cursor: 'pointer', position: 'relative' }}
+              onClick={() => editable ? navigate(`/rapor-ekle?edit=${r.id}`) : undefined}
+              style={{ cursor: editable ? 'pointer' : 'default', position: 'relative' }}
             >
               <ReportCard rapor={r} showActions />
+              {editable && (
               <div
                 onClick={(e) => e.stopPropagation()}
                 style={{
@@ -232,7 +240,6 @@ export default function ReportList() {
                   gap: 4,
                 }}
               >
-                {isAdmin && (
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }}
                     style={{
@@ -248,10 +255,11 @@ export default function ReportList() {
                   >
                     🗑️
                   </button>
-                )}
               </div>
+              )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
 

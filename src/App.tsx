@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import AdaList from './pages/AdaList';
@@ -13,8 +14,11 @@ import Statistics from './pages/Statistics';
 import Login from './pages/Login';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
-import { isLoggedIn, supabaseAuthInit } from './store/authStore';
-import { useEffect } from 'react';
+import { isLoggedIn, supabaseAuthInit, subscribeAuthChanges } from './store/authStore';
+import { supabaseRaporlariYukle, aboneOlRaporGuncellemeleri, realtimeRaporAboneliktenCik } from './store/reportStore';
+import { supabaseAtamalariYukle, aboneOlAtamaGuncellemeleri, realtimeAtamaAboneliktenCik } from './store/atamaStore';
+import { isSupabaseReady } from './lib/supabase';
+import { useEffect, useState } from 'react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!isLoggedIn()) {
@@ -23,11 +27,40 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+const isNative = Capacitor.isNativePlatform();
+const AppRouter = isNative ? HashRouter : BrowserRouter;
+
 export default function App() {
+  const [authTick, setAuthTick] = useState(0);
+
   useEffect(() => { supabaseAuthInit(); }, []);
+  useEffect(() => subscribeAuthChanges(() => setAuthTick(t => t + 1)), []);
+
+  useEffect(() => {
+    if (!isLoggedIn() || !isSupabaseReady()) return;
+
+    Promise.all([supabaseRaporlariYukle(), supabaseAtamalariYukle()]);
+
+    aboneOlRaporGuncellemeleri();
+    aboneOlAtamaGuncellemeleri();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        supabaseRaporlariYukle();
+        supabaseAtamalariYukle();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      realtimeRaporAboneliktenCik();
+      realtimeAtamaAboneliktenCik();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [authTick]);
 
   return (
-    <BrowserRouter basename="/santiye_takip_9">
+    <AppRouter basename={isNative ? undefined : '/santiye_takip_9'}>
       <ErrorBoundary>
         <>
           <Toast />
@@ -57,6 +90,6 @@ export default function App() {
           </Routes>
         </>
       </ErrorBoundary>
-    </BrowserRouter>
+    </AppRouter>
   );
 }

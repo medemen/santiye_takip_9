@@ -18,7 +18,7 @@ export default function AdaDetail() {
     return <div style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}>Ada bulunamadı</div>;
   }
 
-  const ilerleme = getAdaGenelIlerleme(ada!, adaData.bloklar, IS_KALEMLERI as readonly string[]);
+  const ilerleme = getAdaGenelIlerleme(ada!, adaData.bloklar, IS_KALEMLERI);
   const santiyeSefi = getSantiyeSefi(ada!);
   const sorumlular = getBlokSorumlulari(ada!);
 

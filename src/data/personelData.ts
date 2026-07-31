@@ -42,6 +42,10 @@ export function isSantiyeSefi(ad_soyad: string): boolean {
   return personelData.santiye_sefleri.some((s) => s.ad_soyad === ad_soyad);
 }
 
+export function isProjeMuduru(ad_soyad: string): boolean {
+  return personelData.personel.some((p) => p.ad_soyad === ad_soyad && p.proje_muduru);
+}
+
 export function getSefAdalar(ad_soyad: string): string[] {
   const sef = personelData.santiye_sefleri.find((s) => s.ad_soyad === ad_soyad);
   return sef?.adalar ?? [];

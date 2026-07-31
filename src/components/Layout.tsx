@@ -1,5 +1,7 @@
 import { useNavigate, NavLink } from 'react-router-dom';
-import { getCurrentUser, cikisYap } from '../store/authStore';
+import { useReducer, useEffect } from 'react';
+import { getCurrentUser, cikisYap, isProjeMuduruSession } from '../store/authStore';
+import { subscribeRaporChanges } from '../store/reportStore';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
@@ -17,6 +19,12 @@ interface Props {
 export default function Layout({ children }: Props) {
   const navigate = useNavigate();
   const user = getCurrentUser();
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
+
+  useEffect(() => {
+    const unsub = subscribeRaporChanges(() => forceUpdate());
+    return unsub;
+  }, []);
 
   const handleLogout = () => {
     if (window.confirm('Çıkış yapmak istediğinize emin misiniz?')) {
@@ -26,7 +34,7 @@ export default function Layout({ children }: Props) {
   };
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100dvh', backgroundColor: '#f8fafc', position: 'relative' }}>
+    <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100dvh', backgroundColor: '#f8fafc', position: 'relative', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div
         style={{
           display: 'flex',
@@ -44,7 +52,10 @@ export default function Layout({ children }: Props) {
               👤 {user.ad_soyad}{' '}
               <span style={{ fontSize: 11, color: '#9ca3af' }}>
                 ({user.rol})
-                {user.admin && (
+                {isProjeMuduruSession() && (
+                  <span style={{ color: '#8b5cf6', fontWeight: 600 }}> 👑 Proje Müdürü</span>
+                )}
+                {user.admin && !isProjeMuduruSession() && (
                   <span style={{ color: '#f59e0b', fontWeight: 600 }}> • Yönetici</span>
                 )}
               </span>

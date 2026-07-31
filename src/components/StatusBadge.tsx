@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { IsDurumu } from '../types';
 import { DURUM_RENKLERI, DURUM_LABELLARI } from '../data/isKalemleri';
 
@@ -6,7 +7,7 @@ interface Props {
   size?: 'sm' | 'md';
 }
 
-export default function StatusBadge({ durum, size = 'md' }: Props) {
+const StatusBadge = memo(function StatusBadge({ durum, size = 'md' }: Props) {
   const color = DURUM_RENKLERI[durum];
   const label = DURUM_LABELLARI[durum];
   const fontSize = size === 'sm' ? 11 : 13;
@@ -28,4 +29,6 @@ export default function StatusBadge({ durum, size = 'md' }: Props) {
       {label}
     </span>
   );
-}
+});
+
+export default StatusBadge;

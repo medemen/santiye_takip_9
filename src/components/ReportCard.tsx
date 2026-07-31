@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import type { Rapor } from '../types';
 import StatusBadge from './StatusBadge';
 import { formatDateTime } from '../utils/helpers';
@@ -10,7 +10,7 @@ interface Props {
   showActions?: boolean;
 }
 
-export default function ReportCard({ rapor, onClick, showActions }: Props) {
+const ReportCard = memo(function ReportCard({ rapor, onClick, showActions }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -70,4 +70,6 @@ export default function ReportCard({ rapor, onClick, showActions }: Props) {
       </div>
     </div>
   );
-}
+});
+
+export default ReportCard;

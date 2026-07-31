@@ -20,14 +20,14 @@ export default function BlokDetail() {
     return <div style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}>Blok bulunamadı</div>;
   }
 
-  const progress = getBlokProgress(ada!, blokNum, IS_KALEMLERI as readonly string[]);
-  const genelIlerleme = getBlokGenelIlerleme(ada!, blokNum, IS_KALEMLERI as readonly string[]);
+  const progress = getBlokProgress(ada!, blokNum, IS_KALEMLERI);
+  const genelIlerleme = getBlokGenelIlerleme(ada!, blokNum, IS_KALEMLERI);
   const santiyeSefi = getSantiyeSefi(ada!);
   const raporlar = getBlokRaporlari(ada!, blokNum).sort(
     (a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime()
   );
 
-  const progressArray = (IS_KALEMLERI as readonly string[]).map((ik) => {
+  const progressArray = (IS_KALEMLERI).map((ik) => {
     const r = progress[ik];
     return { isKalemi: ik, rapor: r };
   });

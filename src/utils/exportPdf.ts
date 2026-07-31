@@ -27,7 +27,9 @@ export async function raporPdfExport(rapor: Rapor, element: HTMLElement): Promis
     heightLeft -= pdf.internal.pageSize.getHeight() - 20;
   }
 
-  pdf.save(`${rapor.ada}_Blok${rapor.blok_no}_${rapor.is_kalemi}.pdf`);
+  const safeName = `${rapor.ada}_Blok${rapor.blok_no}_${rapor.is_kalemi}`
+    .replace(/[^a-zA-Z0-9_]/g, '_');
+  pdf.save(`${safeName}.pdf`);
 }
 
 export function raporMetinExport(rapor: Rapor): string {

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Blok } from '../types';
 import { getSantiyeSefi } from '../data/personelData';
 import { getAdaGenelIlerleme } from '../store/reportStore';
@@ -13,9 +14,9 @@ interface Props {
   onClick?: () => void;
 }
 
-export default function AdaCard({ ada, blokSayisi, toplamDaire, toplamKat, bloklar, onClick }: Props) {
+const AdaCard = memo(function AdaCard({ ada, blokSayisi, toplamDaire, toplamKat, bloklar, onClick }: Props) {
   const santiyeSefi = getSantiyeSefi(ada);
-  const ilerleme = getAdaGenelIlerleme(ada, bloklar, IS_KALEMLERI as readonly string[]);
+  const ilerleme = getAdaGenelIlerleme(ada, bloklar, IS_KALEMLERI);
 
   return (
     <div
@@ -73,4 +74,6 @@ export default function AdaCard({ ada, blokSayisi, toplamDaire, toplamKat, blokl
       <ProgressBar value={ilerleme} height={6} />
     </div>
   );
-}
+});
+
+export default AdaCard;

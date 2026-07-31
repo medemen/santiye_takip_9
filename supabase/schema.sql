@@ -82,10 +82,18 @@ create policy "Kullanicilar kendini gunceller" on public.kullanicilar for update
 
 create policy "Raporlar herkes gorur" on public.raporlar for select using (true);
 create policy "Raporlar herkes ekler" on public.raporlar for insert with check (true);
-create policy "Raporlar sahibi gunceller" on public.raporlar for update using (raporlayan = (select ad_soyad from public.kullanicilar where id = auth.uid()));
-create policy "Raporlar admin siler" on public.raporlar for delete using (
-  (select admin from public.kullanicilar where id = auth.uid()) = true
-);
+create policy "Raporlar herkes gunceller" on public.raporlar for update using (true) with check (true);
+create policy "Raporlar herkes siler" on public.raporlar for delete using (true);
+
+create policy "Ada atamalari herkes gorur" on public.kullanici_ada_atamalari for select using (true);
+create policy "Ada atamalari herkes ekler" on public.kullanici_ada_atamalari for insert with check (true);
+create policy "Ada atamalari herkes gunceller" on public.kullanici_ada_atamalari for update using (true) with check (true);
+create policy "Ada atamalari herkes siler" on public.kullanici_ada_atamalari for delete using (true);
+
+create policy "Blok atamalari herkes gorur" on public.kullanici_blok_atamalari for select using (true);
+create policy "Blok atamalari herkes ekler" on public.kullanici_blok_atamalari for insert with check (true);
+create policy "Blok atamalari herkes gunceller" on public.kullanici_blok_atamalari for update using (true) with check (true);
+create policy "Blok atamalari herkes siler" on public.kullanici_blok_atamalari for delete using (true);
 
 -- Indexes
 create index if not exists idx_raporlar_ada on public.raporlar(ada);

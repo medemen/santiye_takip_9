@@ -6,6 +6,7 @@ import DonutChart from '../components/DonutChart';
 import BarChart from '../components/BarChart';
 import ReportCard from '../components/ReportCard';
 import ProgressBar from '../components/ProgressBar';
+import { card, btnGhost } from '../utils/styles';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -23,14 +24,14 @@ export default function Dashboard() {
 
   const adaProgress = blokData.adalar.map((a) => ({
     name: a.ada,
-    value: getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI as readonly string[]),
+    value: getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI),
     color: '#f59e0b',
   }));
 
   const genelIlerleme =
     blokData.adalar.length > 0
       ? Math.round(
-          blokData.adalar.reduce((s, a) => s + getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI as readonly string[]), 0) /
+          blokData.adalar.reduce((s, a) => s + getAdaGenelIlerleme(a.ada, a.bloklar, IS_KALEMLERI), 0) /
             blokData.adalar.length
         )
       : 0;
@@ -46,16 +47,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 18,
-          marginBottom: 16,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          border: '1px solid #f0f0f0',
-        }}
-      >
+      <div style={{ ...card, padding: 18, marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#4b5563' }}>Genel İlerleme</span>
           <span style={{ fontSize: 24, fontWeight: 700, color: genelIlerleme === 100 ? '#22c55e' : '#f59e0b' }}>
@@ -65,47 +57,19 @@ export default function Dashboard() {
         <ProgressBar value={genelIlerleme} height={10} />
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 16,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          border: '1px solid #f0f0f0',
-        }}
-      >
+      <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0 }}>
             Rapor Dağılımı
           </h3>
-          <button
-            onClick={() => navigate('/istatistik')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#f59e0b',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
+          <button onClick={() => navigate('/istatistik')} style={btnGhost}>
             Detaylı İstatistik →
           </button>
         </div>
         <DonutChart data={donutData} />
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 16,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          border: '1px solid #f0f0f0',
-        }}
-      >
+      <div style={{ ...card, marginBottom: 16 }}>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0, marginBottom: 8 }}>
           Ada Bazında İlerleme
         </h3>
@@ -147,31 +111,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div
-          style={{
-            backgroundColor: '#fff',
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-            border: '1px solid #f0f0f0',
-          }}
-        >
+      <div style={{ ...card, marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, fontWeight: 600, color: '#4b5563', margin: 0 }}>
               Son Raporlar
             </h3>
-          <button
-            onClick={() => navigate('/raporlar')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#f59e0b',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
+          <button onClick={() => navigate('/raporlar')} style={btnGhost}>
             Tümü
           </button>
         </div>

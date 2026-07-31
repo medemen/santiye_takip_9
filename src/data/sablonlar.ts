@@ -1,48 +1,56 @@
+import { getGrupById } from './isKalemleri';
+
 export interface Sablon {
   id: string;
   ad: string;
   aciklama: string;
-  is_kalemleri: string[];
+  grup_idleri: string[];
   varsayilan_durum: string;
 }
 
 export const SABLONLAR: Sablon[] = [
   {
-    id: 'temel-insaat',
-    ad: 'Temel İnşaat',
-    aciklama: 'Kazı, temel, kalıp, demir ve beton işleri',
-    is_kalemleri: ['Kazı', 'Temel', 'Kalıp', 'Demir', 'Beton'],
+    id: 'kaba-isler',
+    ad: 'Kaba İşler',
+    aciklama: 'Hafriyat, betonarme ve subasman işleri',
+    grup_idleri: ['kaba-isler'],
+    varsayilan_durum: 'tamamlandi',
+  },
+  {
+    id: 'duvar-yalitim',
+    ad: 'Duvar & Yalıtım',
+    aciklama: 'Perde/yapı duvarı, izolasyon ve drenaj işleri',
+    grup_idleri: ['duvar-yalitim'],
     varsayilan_durum: 'devam_ediyor',
   },
   {
-    id: 'kaba-insaat',
-    ad: 'Kaba İnşaat',
-    aciklama: 'Duvar, yalıtım, sıva ve iskele işleri',
-    is_kalemleri: ['Tuğla Duvar', 'Yalıtım', 'Sıva', 'İskele'],
-    varsayilan_durum: 'planlandi',
-  },
-  {
-    id: 'ince-insaat',
-    ad: 'İnce İnşaat',
-    aciklama: 'Boya, kapı/pencere, merdiven ve çevre düzenleme',
-    is_kalemleri: ['Boya', 'Kapı/Pencere', 'Merdiven', 'Çevre Düzenleme'],
-    varsayilan_durum: 'planlandi',
+    id: 'ince-isler',
+    ad: 'İnce İşler',
+    aciklama: 'Sıva, döşeme, seramik, doğrama, mobilya ve mermer işleri',
+    grup_idleri: ['ic-siva', 'doseme', 'seramik', 'dogramalar', 'mobilya-kapi', 'mermer'],
+    varsayilan_durum: 'devam_ediyor',
   },
   {
     id: 'mekanik-elektrik',
     ad: 'Mekanik & Elektrik',
-    aciklama: 'Elektrik, su tesisatı, ısıtma/soğutma ve asansör',
-    is_kalemleri: ['Elektrik', 'Su Tesisatı', 'Isıtma/Soğutma', 'Asansör'],
-    varsayilan_durum: 'planlandi',
+    aciklama: 'Tesisat, asansör ve zayıf akım işleri',
+    grup_idleri: ['mekanik-tesisat', 'elektrik-tesisat', 'asansor', 'zayif-akim'],
+    varsayilan_durum: 'devam_ediyor',
   },
   {
     id: 'cephe-cati',
     ad: 'Cephe & Çatı',
-    aciklama: 'Cephe kaplama ve çatı işleri',
-    is_kalemleri: ['Cephe Kaplama', 'Çatı'],
-    varsayilan_durum: 'planlandi',
+    aciklama: 'Cephe, korkuluk ve bina girişi işleri',
+    grup_idleri: ['dis-cephe', 'korkuluk', 'bina-giris'],
+    varsayilan_durum: 'devam_ediyor',
   },
 ];
+
+export function getSablonKalemleri(sablon: Sablon): string[] {
+  return sablon.grup_idleri.flatMap(
+    (id) => getGrupById(id)?.kalemler ?? []
+  );
+}
 
 export function getSablonById(id: string): Sablon | undefined {
   return SABLONLAR.find((s) => s.id === id);

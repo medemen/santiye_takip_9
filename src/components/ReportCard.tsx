@@ -28,7 +28,21 @@ const ReportCard = memo(function ReportCard({ rapor, onClick, showActions }: Pro
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#1f2937' }}>
-          {rapor.ada} - Blok {rapor.blok_no}
+          {rapor.ada} - {rapor.blok_no === 0 ? (
+            <span
+              style={{
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                padding: '1px 6px',
+                borderRadius: 6,
+                fontSize: 11,
+              }}
+            >
+              Ada Geneli
+            </span>
+          ) : (
+            <>Blok {rapor.blok_no}</>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           {showActions && (

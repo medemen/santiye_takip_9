@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react';
 import type { Blok, IsDurumu } from '../types';
 import ProgressBar from './ProgressBar';
 import StatusBadge from './StatusBadge';
-import { getBlokRaporlari } from '../store/reportStore';
+import { getBlokProgress, getBlokRaporlari } from '../store/reportStore';
 import { IS_KALEMLERI } from '../data/isKalemleri';
 
 interface Props {
@@ -12,26 +12,32 @@ interface Props {
 }
 
 const BlokCard = memo(function BlokCard({ ada, blok, onClick }: Props) {
-  const raporlar = useMemo(() => getBlokRaporlari(ada, blok.blok_no), [ada, blok.blok_no]);
+  const blokOzelRaporlar = useMemo(
+    () => getBlokRaporlari(ada, blok.blok_no),
+    [ada, blok.blok_no]
+  );
+  const progress = useMemo(
+    () => getBlokProgress(ada, blok.blok_no, IS_KALEMLERI),
+    [ada, blok.blok_no]
+  );
   const isKalemleri = IS_KALEMLERI;
 
   const { tamamlanan, geciken, sonDurum } = useMemo(() => {
     let t = 0, g = 0;
     let son: IsDurumu | null = null;
     for (const ik of isKalemleri) {
-      const sonRapor = raporlar
-        .filter((r) => r.is_kalemi === ik)
-        .sort((a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime());
-      if (sonRapor.length > 0) {
-        if (sonRapor[0].durum === 'tamamlandi') t++;
-        if (sonRapor[0].durum === 'gecikme') g++;
-        if (!son) son = sonRapor[0].durum;
+      const sonRapor = progress[ik];
+      if (sonRapor) {
+        if (sonRapor.durum === 'tamamlandi') t++;
+        if (sonRapor.durum === 'gecikme') g++;
+        if (!son) son = sonRapor.durum;
       }
     }
     return { tamamlanan: t, geciken: g, sonDurum: son };
-  }, [raporlar, isKalemleri]);
+  }, [progress, isKalemleri]);
 
-  const progress = isKalemleri.length > 0 ? Math.round((tamamlanan / isKalemleri.length) * 100) : 0;
+  const genelIlerleme = isKalemleri.length > 0 ? Math.round((tamamlanan / isKalemleri.length) * 100) : 0;
+  const adaGenelinden = blokOzelRaporlar.length === 0;
 
   return (
     <div
@@ -55,8 +61,25 @@ const BlokCard = memo(function BlokCard({ ada, blok, onClick }: Props) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>
-          Blok {blok.blok_no}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>
+            Blok {blok.blok_no}
+          </div>
+          {adaGenelinden && (
+            <span
+              style={{
+                fontSize: 9,
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                padding: '1px 6px',
+                borderRadius: 8,
+                whiteSpace: 'nowrap',
+              }}
+              title="Bu blok için özel rapor yok; ada geneli DURUM TESPİT verileri gösteriliyor"
+            >
+              Ada Geneli
+            </span>
+          )}
         </div>
         {sonDurum && <StatusBadge durum={sonDurum} size="sm" />}
       </div>
@@ -66,7 +89,7 @@ const BlokCard = memo(function BlokCard({ ada, blok, onClick }: Props) {
       <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 10 }}>
         {blok.yapi_konfigurasyonu}
       </div>
-      <ProgressBar value={progress} height={6} label={`${tamamlanan}/${isKalemleri.length} iş kalemi`} />
+      <ProgressBar value={genelIlerleme} height={6} label={`${tamamlanan}/${isKalemleri.length} iş kalemi`} />
       {geciken > 0 && (
         <div style={{ marginTop: 6, fontSize: 12, color: '#ef4444', fontWeight: 500 }}>
           ⚠ {geciken} gecikme

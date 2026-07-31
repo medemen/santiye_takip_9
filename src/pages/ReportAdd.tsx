@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { blokData } from '../data/blokData';
-import { IS_KALEMLERI, DURUM_LABELLARI } from '../data/isKalemleri';
-import { SABLONLAR } from '../data/sablonlar';
+import { IS_KALEMLERI, IMALAT_GRUPLARI, DURUM_LABELLARI } from '../data/isKalemleri';
+import { SABLONLAR, getSablonKalemleri } from '../data/sablonlar';
 import { saveRapor, updateRapor, getRaporById } from '../store/reportStore';
 import { getCurrentUser } from '../store/authStore';
 import { getKullaniciAdaAtamasi, getKullaniciBloklari } from '../store/atamaStore';
@@ -50,6 +50,8 @@ export default function ReportAdd() {
   const [aciklama, setAciklama] = useState('');
   const [tarih, setTarih] = useState(todayISO());
   const [fotograflar, setFotograflar] = useState<string[]>([]);
+  const [acikGruplar, setAcikGruplar] = useState<Set<string>>(new Set());
+  const [kalemArama, setKalemArama] = useState('');
 
   useEffect(() => {
     if (editId) {
@@ -81,8 +83,17 @@ export default function ReportAdd() {
     return [];
   };
 
-  const handleSubmit = () => {
-    if (!ada || !blokNo || !isKalemi || !user) return;
+  const toggleGrup = (grupId: string) => {
+    setAcikGruplar((prev) => {
+      const yeni = new Set(prev);
+      if (yeni.has(grupId)) yeni.delete(grupId);
+      else yeni.add(grupId);
+      return yeni;
+    });
+  };
+
+  const kaydetRapor = (): boolean => {
+    if (!ada || !blokNo || !isKalemi || !user) return false;
     if (editMode && editId) {
       updateRapor(editId, {
         tarih,
@@ -109,8 +120,54 @@ export default function ReportAdd() {
       });
       toastGoster('Rapor kaydedildi', 'success');
     }
-    navigate('/raporlar');
+    return true;
   };
+
+  const handleSubmit = () => {
+    if (kaydetRapor()) navigate('/raporlar');
+  };
+
+  const handleKaydetVeDevamEt = () => {
+    if (editMode) {
+      if (kaydetRapor()) navigate('/raporlar');
+      return;
+    }
+    if (kaydetRapor()) {
+      setIsKalemi('');
+      setDurum('devam_ediyor');
+      setIlerleme(50);
+      setAciklama('');
+      setFotograflar([]);
+      setStep('is_kalemi');
+    }
+  };
+
+  const kalemButonlari = (kalemler: readonly string[]) => (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      {kalemler.map((ik) => (
+        <button
+          key={ik}
+          onClick={() => {
+            setIsKalemi(ik);
+            setStep('detay');
+          }}
+          style={{
+            padding: '10px 8px',
+            backgroundColor: isKalemi === ik ? '#f59e0b' : '#f9fafb',
+            border: '1px solid',
+            borderColor: isKalemi === ik ? '#f59e0b' : '#e5e7eb',
+            borderRadius: 10,
+            fontSize: 12,
+            fontWeight: 500,
+            color: isKalemi === ik ? '#fff' : '#374151',
+            cursor: 'pointer',
+          }}
+        >
+          {ik}
+        </button>
+      ))}
+    </div>
+  );
 
   const renderStepIndicator = () => {
     const steps = ['ada', 'blok', 'is_kalemi', 'detay'] as Step[];
@@ -284,69 +341,116 @@ export default function ReportAdd() {
                   Hızlı Şablon
                 </label>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {SABLONLAR.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => {
-                        if (s.is_kalemleri.length === 1) {
-                          setIsKalemi(s.is_kalemleri[0]);
-                          setStep('detay');
-                        } else {
-                          const secim = window.prompt(`"${s.ad}" şablonu seçildi. İş kalemi seçin:\n${s.is_kalemleri.map((ik, i) => `${i + 1}. ${ik}`).join('\n')}`);
-                          if (secim) {
-                            const idx = parseInt(secim) - 1;
-                            if (idx >= 0 && idx < s.is_kalemleri.length) {
-                              setIsKalemi(s.is_kalemleri[idx]);
-                              setDurum(s.varsayilan_durum as IsDurumu);
-                              setStep('detay');
+                  {SABLONLAR.map((s) => {
+                    const kalemler = getSablonKalemleri(s);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          if (kalemler.length === 1) {
+                            setIsKalemi(kalemler[0]);
+                            setStep('detay');
+                          } else {
+                            const secim = window.prompt(`"${s.ad}" şablonu seçildi. İş kalemi seçin:\n${kalemler.map((ik, i) => `${i + 1}. ${ik}`).join('\n')}`);
+                            if (secim) {
+                              const idx = parseInt(secim) - 1;
+                              if (idx >= 0 && idx < kalemler.length) {
+                                setIsKalemi(kalemler[idx]);
+                                setDurum(s.varsayilan_durum as IsDurumu);
+                                setStep('detay');
+                              }
                             }
                           }
-                        }
-                      }}
-                      style={{
-                        padding: '6px 12px', backgroundColor: '#fef3c7', border: '1px solid #f59e0b',
-                        borderRadius: 8, fontSize: 11, fontWeight: 500, color: '#92400e',
-                        cursor: 'pointer',
-                      }}
-                      title={s.aciklama}
-                    >
-                      📋 {s.ad}
-                    </button>
-                  ))}
+                        }}
+                        style={{
+                          padding: '6px 12px', backgroundColor: '#fef3c7', border: '1px solid #f59e0b',
+                          borderRadius: 8, fontSize: 11, fontWeight: 500, color: '#92400e',
+                          cursor: 'pointer',
+                        }}
+                        title={s.aciklama}
+                      >
+                        📋 {s.ad}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 8,
-                marginBottom: 16,
-              }}
-            >
-              {IS_KALEMLERI.map((ik) => (
-                <button
-                  key={ik}
-                  onClick={() => {
-                    setIsKalemi(ik);
-                    setStep('detay');
-                  }}
-                  style={{
-                    padding: '10px 8px',
-                    backgroundColor: isKalemi === ik ? '#f59e0b' : '#f9fafb',
-                    border: '1px solid',
-                    borderColor: isKalemi === ik ? '#f59e0b' : '#e5e7eb',
-                    borderRadius: 10,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: isKalemi === ik ? '#fff' : '#374151',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {ik}
-                </button>
-              ))}
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="text"
+                placeholder="İş kalemi ara..."
+                value={kalemArama}
+                onChange={(e) => setKalemArama(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: '1px solid #e5e7eb',
+                  fontSize: 13,
+                  boxSizing: 'border-box',
+                }}
+              />
             </div>
+
+            {kalemArama ? (
+              <div style={{ marginBottom: 16 }}>
+                {kalemButonlari(
+                  IS_KALEMLERI.filter((ik) =>
+                    ik.toLowerCase().includes(kalemArama.toLowerCase())
+                  )
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                {IMALAT_GRUPLARI.map((g) => {
+                  const acik = acikGruplar.has(g.id);
+                  return (
+                    <div
+                      key={g.id}
+                      style={{
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 10,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <button
+                        onClick={() => toggleGrup(g.id)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          backgroundColor: acik ? '#fef3c7' : '#f9fafb',
+                          border: 'none',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: '#374151',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <span>
+                          {g.ad}{' '}
+                          <span style={{ fontWeight: 400, color: '#9ca3af' }}>
+                            ({g.kalemler.length})
+                          </span>
+                        </span>
+                        <span style={{ fontSize: 11, color: '#f59e0b' }}>
+                          {acik ? '▾ Kapat' : '▸ Aç'}
+                        </span>
+                      </button>
+                      {acik && (
+                        <div style={{ padding: 10, backgroundColor: '#fff' }}>
+                          {kalemButonlari(g.kalemler)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <button
               onClick={() => setStep('blok')}
               style={{
@@ -540,6 +644,24 @@ export default function ReportAdd() {
               >
                 ← Geri
               </button>
+              {!editMode && (
+                <button
+                  onClick={handleKaydetVeDevamEt}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#dbeafe',
+                    border: 'none',
+                    borderRadius: 12,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#1e40af',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Kaydet ve Devam Et
+                </button>
+              )}
               <button
                 onClick={handleSubmit}
                 style={{

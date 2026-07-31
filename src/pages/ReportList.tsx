@@ -18,6 +18,7 @@ export default function ReportList() {
   const [filterBlok, setFilterBlok] = useState(preBlok);
   const [filterDurum, setFilterDurum] = useState('');
   const [sadeceBenim, setSadeceBenim] = useState(false);
+  const [sistemRaporlariDahil, setSistemRaporlariDahil] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const user = getCurrentUser();
@@ -40,6 +41,7 @@ export default function ReportList() {
   }
 
   const filtered = raporlar.filter((r) => {
+    if (!sistemRaporlariDahil && r.raporlayan === 'DURUM TESPİT') return false;
     if (filterAda && r.ada !== filterAda) return false;
     if (filterBlok && r.blok_no !== parseInt(filterBlok)) return false;
     if (filterDurum && r.durum !== filterDurum) return false;
@@ -142,6 +144,18 @@ export default function ReportList() {
           </button>
         </div>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 12, color: '#6b7280' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={sistemRaporlariDahil}
+              onChange={(e) => setSistemRaporlariDahil(e.target.checked)}
+              style={{ cursor: 'pointer' }}
+            />
+            DURUM TESPİT + tahmin raporlarını göster
+          </label>
+        </div>
+
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <select
             value={filterAda}
@@ -176,6 +190,9 @@ export default function ReportList() {
             }}
           >
             <option value="">Tüm Bloklar</option>
+            {filterAda && (
+              <option value="0">Ada Geneli</option>
+            )}
             {filterAda && adaList.find((a) => a.ada === filterAda)?.bloklar.map((b) => (
               <option key={b.blok_no} value={b.blok_no.toString()}>
                 Blok {b.blok_no}

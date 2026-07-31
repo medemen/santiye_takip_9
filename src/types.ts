@@ -70,6 +70,7 @@ export interface Rapor {
   tarih: string;
   raporlayan: string;
   ada: string;
+  // blok_no 0 = ada geneli rapor (DURUM TESPİT aktarımı)
   blok_no: number;
   is_kalemi: string;
   durum: IsDurumu;

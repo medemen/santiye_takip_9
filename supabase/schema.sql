@@ -99,3 +99,4 @@ create policy "Blok atamalari herkes siler" on public.kullanici_blok_atamalari f
 create index if not exists idx_raporlar_ada on public.raporlar(ada);
 create index if not exists idx_raporlar_raporlayan on public.raporlar(raporlayan);
 create index if not exists idx_raporlar_durum on public.raporlar(durum);
+create index if not exists idx_raporlar_ada_is_kalemi on public.raporlar(ada, is_kalemi);

@@ -3,7 +3,7 @@ import { getSupabase, isSupabaseReady } from '../lib/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { toastGoster } from './toastStore';
 
-const STORAGE_KEY = 'santiye_raporlari';
+const STORAGE_KEY = 'santiye_raporlari_v2';
 
 type Listener = () => void;
 const _raporListeners = new Set<Listener>();
@@ -186,22 +186,32 @@ export function getPersonelRaporlari(adSoyad: string): Rapor[] {
   return getRaporlar().filter((r) => r.raporlayan === adSoyad);
 }
 
+function sonRaporBul(raporlar: Rapor[], ik: string): Rapor | null {
+  const son = raporlar
+    .filter((r) => r.is_kalemi === ik)
+    .sort(
+      (a, b) =>
+        new Date(b.olusturma_tarihi).getTime() -
+        new Date(a.olusturma_tarihi).getTime()
+    );
+  return son.length > 0 ? son[0] : null;
+}
+
 export function getBlokProgress(
   ada: string,
   blokNo: number,
   isKalemleri: readonly string[]
 ): Record<string, Rapor | null> {
   const raporlar = getBlokRaporlari(ada, blokNo);
+  // blok_no=0 ada geneli raporlar devralma; blok özel raporu varsa o kazanır
+  const adaGenel = blokNo !== 0
+    ? getRaporlar().filter((r) => r.ada === ada && r.blok_no === 0)
+    : [];
   const progress: Record<string, Rapor | null> = {};
   for (const ik of isKalemleri) {
-    const sonRapor = raporlar
-      .filter((r) => r.is_kalemi === ik)
-      .sort(
-        (a, b) =>
-          new Date(b.olusturma_tarihi).getTime() -
-          new Date(a.olusturma_tarihi).getTime()
-      );
-    progress[ik] = sonRapor.length > 0 ? sonRapor[0] : null;
+    progress[ik] =
+      sonRaporBul(raporlar, ik) ??
+      (blokNo !== 0 ? sonRaporBul(adaGenel, ik) : null);
   }
   return progress;
 }

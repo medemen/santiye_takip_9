@@ -93,7 +93,7 @@ export default function ReportAdd() {
   };
 
   const kaydetRapor = (): boolean => {
-    if (!ada || !blokNo || !isKalemi || !user) return false;
+    if (!ada || !isKalemi || !user) return false;
     if (editMode && editId) {
       updateRapor(editId, {
         tarih,
@@ -281,6 +281,30 @@ export default function ReportAdd() {
             <h3 style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 12 }}>
               {ada} — Blok Seçin
             </h3>
+            <button
+              onClick={() => {
+                setBlokNo(0);
+                setStep('is_kalemi');
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                marginBottom: 10,
+                backgroundColor: blokNo === 0 ? '#f59e0b' : '#fef3c7',
+                border: blokNo === 0 ? 'none' : '2px solid #f59e0b',
+                borderRadius: 12,
+                fontSize: 14,
+                fontWeight: 600,
+                color: blokNo === 0 ? '#fff' : '#92400e',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              Ada Geneli (Tüm Bloklar)
+              <div style={{ fontSize: 12, fontWeight: 400, opacity: 0.85 }}>
+                Tek raporla tüm bloklar için geçerli ilerleme kaydedin
+              </div>
+            </button>
             <div
               style={{
                 display: 'grid',
@@ -332,7 +356,7 @@ export default function ReportAdd() {
         {step === 'is_kalemi' && (
           <div>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
-              {ada} - Blok {blokNo} — İş Kalemi
+              {ada} - {blokNo === 0 ? 'Ada Geneli' : `Blok ${blokNo}`} — İş Kalemi
             </h3>
 
             {!editMode && SABLONLAR.length > 0 && (
@@ -470,7 +494,7 @@ export default function ReportAdd() {
         {step === 'detay' && (
           <div>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 12 }}>
-              {ada} - Blok {blokNo} — {isKalemi}
+              {ada} - {blokNo === 0 ? 'Ada Geneli' : `Blok ${blokNo}`} — {isKalemi}
             </h3>
 
             <div style={{ marginBottom: 16 }}>

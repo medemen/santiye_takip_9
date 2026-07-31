@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { getIstatistikler, getSonRaporlar, getAdaGenelIlerleme, getRaporlar } from '../store/reportStore';
+import { getIstatistikler, getAdaGenelIlerleme, getRaporlar } from '../store/reportStore';
 import { blokData } from '../data/blokData';
 import { IS_KALEMLERI, DURUM_RENKLERI } from '../data/isKalemleri';
 import DonutChart from '../components/DonutChart';
@@ -11,7 +11,10 @@ import { card, btnGhost } from '../utils/styles';
 export default function Dashboard() {
   const navigate = useNavigate();
   const stats = getIstatistikler();
-  const sonRaporlar = getSonRaporlar(5);
+  const sonRaporlar = getRaporlar()
+    .filter((r) => r.raporlayan !== 'DURUM TESPİT')
+    .sort((a, b) => new Date(b.olusturma_tarihi).getTime() - new Date(a.olusturma_tarihi).getTime())
+    .slice(0, 5);
   const tumRaporlar = getRaporlar();
   const gecikenIsler = tumRaporlar.filter((r) => r.durum === 'gecikme');
 
@@ -96,14 +99,14 @@ export default function Dashboard() {
             {gecikenIsler.slice(0, 5).map((r) => (
               <div
                 key={r.id}
-                onClick={() => navigate(`/ada/${r.ada}/blok/${r.blok_no}`)}
+                onClick={() => navigate(r.blok_no === 0 ? `/ada/${r.ada}` : `/ada/${r.ada}/blok/${r.blok_no}`)}
                 style={{
                   display: 'flex', justifyContent: 'space-between',
                   padding: '6px 10px', backgroundColor: '#fff',
                   borderRadius: 8, cursor: 'pointer', fontSize: 12,
                 }}
               >
-                <span style={{ fontWeight: 500 }}>{r.ada} - Blok {r.blok_no}</span>
+                <span style={{ fontWeight: 500 }}>{r.ada} - {r.blok_no === 0 ? 'Ada Geneli' : `Blok ${r.blok_no}`}</span>
                 <span style={{ color: '#ef4444' }}>{r.is_kalemi}</span>
               </div>
             ))}

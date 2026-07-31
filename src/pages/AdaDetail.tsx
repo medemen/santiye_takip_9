@@ -66,6 +66,23 @@ export default function AdaDetail() {
           <span style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b' }}>%{ilerleme}</span>
         </div>
         <ProgressBar value={ilerleme} height={8} />
+        <button
+          onClick={() => navigate(`/rapor-ekle?ada=${ada}&blok=0`)}
+          style={{
+            width: '100%',
+            marginTop: 10,
+            padding: '10px 12px',
+            backgroundColor: '#fef3c7',
+            border: 'none',
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#92400e',
+            cursor: 'pointer',
+          }}
+        >
+          Ada Geneli Rapor Ekle
+        </button>
       </div>
 
       <div

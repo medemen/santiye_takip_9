@@ -21,6 +21,10 @@ export default function Layout({ children }: Props) {
   const user = getCurrentUser();
   const [, forceUpdate] = useReducer(x => x + 1, 0);
 
+  const gorunurNav = navItems.filter(
+    (item) => !['/personel', '/toplu-rapor'].includes(item.to) || (user?.admin ?? false)
+  );
+
   useEffect(() => {
     const unsub = subscribeRaporChanges(() => forceUpdate());
     return unsub;
@@ -97,7 +101,7 @@ export default function Layout({ children }: Props) {
           boxShadow: '0 -1px 3px rgba(0,0,0,0.05)',
         }}
       >
-        {navItems.map((item) =>
+        {gorunurNav.map((item) =>
           item.fab ? (
             <NavLink
               key={item.to}

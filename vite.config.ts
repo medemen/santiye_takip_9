@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   server: {
-    allowedHosts: ['cache-circle-balancing.ngrok-free.dev'],
+    allowedHosts: true,
   },
 })

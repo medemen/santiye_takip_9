@@ -2,6 +2,7 @@ import type { KullaniciAtamalari, BlokAtamasi } from '../types';
 import { getSupabase, isSupabaseReady } from '../lib/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { toastGoster } from './toastStore';
+import { getCurrentUser } from './authStore';
 
 const BLOK_KEY = 'santiye_atanabilir_bloklar';
 const ADA_KEY = 'santiye_kullanici_ada_atamalari';
@@ -97,7 +98,7 @@ export function setKullaniciBlokAtamasi(ad_soyad: string, atama: BlokAtamasi): v
         });
       } else {
         supabase.from('kullanici_blok_atamalari').upsert(
-          { ad_soyad, ada, blok_nos: blokNos },
+          { ad_soyad, ada, blok_nos: blokNos, updated_at: new Date().toISOString(), user_id: getCurrentUser()?.user_id ?? null },
           { onConflict: 'ad_soyad, ada' }
         ).then(({ error }) => {
           if (error) {
@@ -152,7 +153,7 @@ export function setKullaniciAdaAtamasi(ad_soyad: string, ada: string | null): vo
       });
     } else {
       getSupabase().from('kullanici_ada_atamalari').upsert(
-        { ad_soyad, ada, updated_at: new Date().toISOString() },
+        { ad_soyad, ada, updated_at: new Date().toISOString(), user_id: getCurrentUser()?.user_id ?? null },
         { onConflict: 'ad_soyad' }
       ).then(({ error }) => {
         if (error) {
@@ -202,7 +203,7 @@ export async function supabaseAtamalariYukle(): Promise<void> {
     for (const [ad, ada] of bekleyenAda) {
       const { error } = await getSupabase()
         .from('kullanici_ada_atamalari')
-        .upsert({ ad_soyad: ad, ada, updated_at: new Date().toISOString() }, { onConflict: 'ad_soyad' });
+        .upsert({ ad_soyad: ad, ada, updated_at: new Date().toISOString(), user_id: getCurrentUser()?.user_id ?? null }, { onConflict: 'ad_soyad' });
       if (error) {
         console.warn('Supabase yerel ada atama yükleme hatası:', error.message);
         toastGoster('Yerel ada atamaları sunucuya yüklenemedi: ' + error.message, 'error');
@@ -250,7 +251,7 @@ export async function supabaseAtamalariYukle(): Promise<void> {
     }
 
     notifyAtamaListeners();
-  } catch {
-    /* supabase offline, keep local data */
+  } catch (err) {
+    console.error('Supabase atama yükleme hatası:', err);
   }
 }

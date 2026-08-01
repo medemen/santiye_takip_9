@@ -2,6 +2,7 @@ import type { Rapor } from '../types';
 import { getSupabase, isSupabaseReady } from '../lib/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { toastGoster } from './toastStore';
+import { getCurrentUser } from './authStore';
 
 const STORAGE_KEY = 'santiye_raporlari_v2';
 
@@ -28,8 +29,8 @@ function raporToSupabase(r: Rapor) {
     durum: r.durum,
     ilerleme_yuzde: r.ilerleme_yuzde,
     aciklama: r.aciklama || '',
-    fotograflar: r.fotograflar || [],
     olusturma_tarihi: r.olusturma_tarihi,
+    user_id: getCurrentUser()?.user_id ?? null,
   };
 }
 

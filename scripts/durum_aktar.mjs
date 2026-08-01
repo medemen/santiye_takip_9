@@ -6,13 +6,13 @@ import { dirname, join } from 'node:path';
 process.loadEnvFile();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('.env icinde VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY yok.');
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+if (!supabaseUrl || !serviceRoleKey) {
+  console.error('.env icinde VITE_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY yok (RLS sonrasi anon yazamaz).');
   process.exit(1);
 }
 
-const sb = createClient(supabaseUrl, supabaseAnonKey, {
+const sb = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
 });
 

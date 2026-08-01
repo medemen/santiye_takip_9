@@ -43,6 +43,7 @@ export interface BlokData {
 }
 
 export interface Oturum {
+  user_id: string | null;
   ad_soyad: string;
   rol: string;
   admin: boolean;
@@ -77,7 +78,6 @@ export interface Rapor {
   ilerleme_yuzde: number;
   aciklama: string;
   olusturma_tarihi: string;
-  fotograflar?: string[];
 }
 
 export interface BlokProgress {

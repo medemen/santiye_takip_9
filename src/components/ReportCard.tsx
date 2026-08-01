@@ -71,13 +71,6 @@ const ReportCard = memo(function ReportCard({ rapor, onClick, showActions }: Pro
           {rapor.aciklama}
         </div>
       )}
-      {rapor.fotograflar && rapor.fotograflar.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-          {rapor.fotograflar.map((f, i) => (
-            <img key={i} src={f} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }} />
-          ))}
-        </div>
-      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af' }}>
         <span>{rapor.raporlayan}</span>
         <span>{formatDateTime(rapor.olusturma_tarihi)}</span>

@@ -1,9 +1,11 @@
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import type { Rapor } from '../types';
 import { DURUM_LABELLARI } from '../data/isKalemleri';
 
 export async function raporPdfExport(rapor: Rapor, element: HTMLElement): Promise<void> {
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import('html2canvas'),
+    import('jspdf'),
+  ]);
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,

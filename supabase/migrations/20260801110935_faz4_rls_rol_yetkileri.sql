@@ -1,94 +1,9 @@
--- Santiye Takip Database Schema for Supabase
--- Faz 4: RLS & rol bazli yetkilendirme eklendi (yardimci fonksiyonlar, trigger, politikalar)
+-- Faz 4: RLS & rol bazli yetkilendirme (remote'da 20260801110935_faz4_rls_rol_yetkileri ile eslestirildi)
+alter table public.kullanicilar add column if not exists proje_muduru boolean not null default false;
+alter table public.raporlar add column if not exists user_id uuid references auth.users(id);
+alter table public.kullanici_ada_atamalari add column if not exists user_id uuid references auth.users(id);
+alter table public.kullanici_blok_atamalari add column if not exists user_id uuid references auth.users(id);
 
--- Kullanicilar (synced with auth.users)
-create table if not exists public.kullanicilar (
-  id uuid references auth.users on delete cascade primary key,
-  ad_soyad text not null,
-  rol text not null default 'Personel',
-  admin boolean not null default false,
-  yetkili_adalar text[] default '{}',
-  atanan_ada text,
-  proje_muduru boolean not null default false,
-  created_at timestamptz default now()
-);
-alter table public.kullanicilar enable row level security;
-
--- Adalar
-create table if not exists public.adalar (
-  ada text primary key,
-  blok_sayisi int not null,
-  toplam_daire int not null,
-  toplam_kat int not null,
-  created_at timestamptz default now()
-);
-alter table public.adalar enable row level security;
-
--- Bloklar
-create table if not exists public.bloklar (
-  id serial primary key,
-  ada text references public.adalar(ada) on delete cascade,
-  blok_no int not null,
-  tip text not null,
-  daire_sayisi int not null,
-  yapi_konfigurasyonu text not null,
-  kat_sayisi int not null,
-  unique(ada, blok_no)
-);
-alter table public.bloklar enable row level security;
-
--- Raporlar
-create table if not exists public.raporlar (
-  id text primary key,
-  tarih date not null,
-  raporlayan text not null,
-  ada text not null,
-  blok_no int not null,
-  is_kalemi text not null,
-  durum text not null check (durum in ('planlandi','devam_ediyor','tamamlandi','gecikme')),
-  ilerleme_yuzde int not null default 0,
-  aciklama text default '',
-  user_id uuid references auth.users(id),
-  olusturma_tarihi timestamptz default now(),
-  created_at timestamptz default now()
-);
-alter table public.raporlar enable row level security;
-
--- Kullanici Ada Atamalari
-create table if not exists public.kullanici_ada_atamalari (
-  ad_soyad text primary key,
-  ada text,
-  user_id uuid references auth.users(id),
-  updated_at timestamptz default now()
-);
-alter table public.kullanici_ada_atamalari enable row level security;
-
--- Kullanici Blok Atamalari
-create table if not exists public.kullanici_blok_atamalari (
-  id serial primary key,
-  ad_soyad text not null,
-  ada text not null,
-  blok_nos int[] not null default '{}',
-  user_id uuid references auth.users(id),
-  updated_at timestamptz default now(),
-  unique(ad_soyad, ada)
-);
-alter table public.kullanici_blok_atamalari enable row level security;
-
--- Is Kalemleri Hedef Tarihleri
-create table if not exists public.is_kalemi_hedefleri (
-  id serial primary key,
-  ada text not null,
-  blok_no int not null,
-  is_kalemi text not null,
-  hedef_tarih date,
-  unique(ada, blok_no, is_kalemi)
-);
-alter table public.is_kalemi_hedefleri enable row level security;
-
--- ============================================================
--- Faz 4: Yardimci fonksiyonlar (SECURITY DEFINER)
--- ============================================================
 create or replace function public.santiye_ad_soyad()
 returns text
 language sql
@@ -129,7 +44,6 @@ as $$
   select coalesce((select yetkili_adalar from public.kullanicilar where id = auth.uid()), '{}'::text[])
 $$;
 
--- Yeni kullanici trigger'i (auth.users -> kullanicilar)
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -156,7 +70,6 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute procedure public.handle_new_user();
 
--- Yetki yukseltme korumasi: admin olmayan kendi rolunu degistiremez
 create or replace function public.kullanicilar_yetki_korumasi()
 returns trigger
 language plpgsql
@@ -181,35 +94,17 @@ create trigger kullanicilar_yetki_korumasi
 before update on public.kullanicilar
 for each row execute procedure public.kullanicilar_yetki_korumasi();
 
--- Yardimci fonksiyonlar: anon/PUBLIC kapali; RLS politikalari icin authenticated acik.
-revoke execute on function public.santiye_ad_soyad() from public;
-revoke execute on function public.santiye_is_admin() from public;
-revoke execute on function public.santiye_is_pm() from public;
-revoke execute on function public.santiye_yetkili_adalar() from public;
-revoke execute on function public.handle_new_user() from public;
-revoke execute on function public.kullanicilar_yetki_korumasi() from public;
-
-grant execute on function public.santiye_ad_soyad() to authenticated;
-grant execute on function public.santiye_is_admin() to authenticated;
-grant execute on function public.santiye_is_pm() to authenticated;
-grant execute on function public.santiye_yetkili_adalar() to authenticated;
-grant execute on function public.kullanicilar_yetki_korumasi() to authenticated;
-grant execute on function public.handle_new_user() to service_role;
-
--- ============================================================
--- Faz 4: RLS Politikalar (rol bazli)
--- ============================================================
--- Kullanicilar
-create policy "Kullanicilar herkes gorur" on public.kullanicilar
-  for select using (true);
-
+-- Faz 4: rol bazli RLS politikalari
+drop policy if exists "Kullanicilar kendini gunceller" on public.kullanicilar;
 create policy "Kullanicilar kendini veya admin gunceller" on public.kullanicilar
   for update using (auth.uid() = id or santiye_is_admin())
   with check (auth.uid() = id or santiye_is_admin());
 
--- Raporlar
-create policy "Raporlar herkes gorur" on public.raporlar
-  for select using (true);
+drop policy if exists "Raporlar herkes ekler" on public.raporlar;
+drop policy if exists "Raporlar herkes gunceller" on public.raporlar;
+drop policy if exists "Raporlar sahibi gunceller" on public.raporlar;
+drop policy if exists "Raporlar herkes siler" on public.raporlar;
+drop policy if exists "Raporlar admin siler" on public.raporlar;
 
 create policy "Raporlar kendi adina ekler" on public.raporlar
   for insert with check (
@@ -229,9 +124,9 @@ create policy "Raporlar kendi adina siler" on public.raporlar
     raporlayan = santiye_ad_soyad() or santiye_is_admin() or santiye_is_pm()
   );
 
--- Ada atamalari
-create policy "Ada atamalari herkes gorur" on public.kullanici_ada_atamalari
-  for select using (true);
+drop policy if exists "Ada atamalari herkes ekler" on public.kullanici_ada_atamalari;
+drop policy if exists "Ada atamalari herkes gunceller" on public.kullanici_ada_atamalari;
+drop policy if exists "Ada atamalari herkes siler" on public.kullanici_ada_atamalari;
 
 create policy "Ada atamalari admin/PM ekler" on public.kullanici_ada_atamalari
   for insert with check (
@@ -251,9 +146,9 @@ create policy "Ada atamalari admin/PM siler" on public.kullanici_ada_atamalari
     santiye_is_pm() or (santiye_is_admin() and ada = any(santiye_yetkili_adalar()))
   );
 
--- Blok atamalari
-create policy "Blok atamalari herkes gorur" on public.kullanici_blok_atamalari
-  for select using (true);
+drop policy if exists "Blok atamalari herkes ekler" on public.kullanici_blok_atamalari;
+drop policy if exists "Blok atamalari herkes gunceller" on public.kullanici_blok_atamalari;
+drop policy if exists "Blok atamalari herkes siler" on public.kullanici_blok_atamalari;
 
 create policy "Blok atamalari admin/PM ekler" on public.kullanici_blok_atamalari
   for insert with check (
@@ -273,10 +168,6 @@ create policy "Blok atamalari admin/PM siler" on public.kullanici_blok_atamalari
     santiye_is_pm() or (santiye_is_admin() and ada = any(santiye_yetkili_adalar()))
   );
 
--- Adalar/Bloklar (referans verisi)
-create policy "Adalar herkes gorur" on public.adalar
-  for select using (true);
-
 create policy "Adalar admin/PM yazar" on public.adalar
   for insert with check (santiye_is_admin() or santiye_is_pm());
 
@@ -286,9 +177,6 @@ create policy "Adalar admin/PM gunceller" on public.adalar
 
 create policy "Adalar admin/PM siler" on public.adalar
   for delete using (santiye_is_admin() or santiye_is_pm());
-
-create policy "Bloklar herkes gorur" on public.bloklar
-  for select using (true);
 
 create policy "Bloklar admin/PM yazar" on public.bloklar
   for insert with check (santiye_is_admin() or santiye_is_pm());
@@ -300,10 +188,6 @@ create policy "Bloklar admin/PM gunceller" on public.bloklar
 create policy "Bloklar admin/PM siler" on public.bloklar
   for delete using (santiye_is_admin() or santiye_is_pm());
 
--- Hedef tarihleri
-create policy "Hedefler herkes gorur" on public.is_kalemi_hedefleri
-  for select using (true);
-
 create policy "Hedefler admin/PM yazar" on public.is_kalemi_hedefleri
   for insert with check (santiye_is_admin() or santiye_is_pm());
 
@@ -314,9 +198,4 @@ create policy "Hedefler admin/PM gunceller" on public.is_kalemi_hedefleri
 create policy "Hedefler admin/PM siler" on public.is_kalemi_hedefleri
   for delete using (santiye_is_admin() or santiye_is_pm());
 
--- Indexes
 create index if not exists idx_raporlar_user_id on public.raporlar(user_id);
-create index if not exists idx_raporlar_ada on public.raporlar(ada);
-create index if not exists idx_raporlar_raporlayan on public.raporlar(raporlayan);
-create index if not exists idx_raporlar_durum on public.raporlar(durum);
-create index if not exists idx_raporlar_ada_is_kalemi on public.raporlar(ada, is_kalemi);

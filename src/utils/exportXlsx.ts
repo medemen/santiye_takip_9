@@ -1,8 +1,8 @@
-import * as XLSX from 'xlsx';
 import type { Rapor } from '../types';
 import { DURUM_LABELLARI } from '../data/isKalemleri';
 
-export function raporlarXlsxExport(raporlar: Rapor[], dosyaAdi = 'raporlar.xlsx'): void {
+export async function raporlarXlsxExport(raporlar: Rapor[], dosyaAdi = 'raporlar.xlsx'): Promise<void> {
+  const XLSX = await import('xlsx');
   const data = raporlar.map((r) => ({
     'Ada': r.ada,
     'Blok': r.blok_no,
